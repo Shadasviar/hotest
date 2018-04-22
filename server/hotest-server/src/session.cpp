@@ -19,10 +19,12 @@ bool Session::run()
     Datagram cmd = recvDatagram(_clientFd);
     if (cmd.cmd != OPEN_SESSION) {
         slog(SLOG_INFO, "Client autentification failed\n");
+        sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, ACCESS_DENIED));
         return false;
     }
     if (cmd.dataSize < LOGIN_BYTE_SIZE + PASSWORD_BYTE_SIZE) {
         slog(SLOG_INFO, "Bad data size recieved from client\n");
+        sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, ACCESS_DENIED));
         return false;
     }
     char login[LOGIN_BYTE_SIZE] =  {0};
@@ -40,7 +42,5 @@ bool Session::run()
         return false;
     }
 
-    while (true) {
-        cmd = recvDatagram(_clientFd);
-    }
+    sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, SUCCESS));
 }
