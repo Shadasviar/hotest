@@ -1,7 +1,9 @@
 #ifndef COMMUNICATION_PROTOCOL_H
 #define COMMUNICATION_PROTOCOL_H
 
-enum Commands {
+namespace HotestProtocol {
+
+enum Command {
     GET_TEST_LIST_SIZE = 1,
     GET_TEST,
     SEND_TEST_ANSWERS,
@@ -13,5 +15,14 @@ enum Commands {
     ADD_USER,
     ERROR_DATAGRAM,
 };
+
+#define LOGIN_BYTE_SIZE 20
+#define PASSWORD_BYTE_SIZE 30
+
+enum ErrorCode {
+    SUCCESS = 0,
+};
+
+}
 
 #endif // COMMUNICATION_PROTOCOL_H

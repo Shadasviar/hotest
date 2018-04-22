@@ -1,10 +1,10 @@
 #include <iostream>
-#include <communication_protocol.h>
+#include <hotest_protocol.h>
 
 using namespace std;
 
 int main()
 {
-    cout << "Hello World!" << endl;
+    cout << "ERROR code: " << HotestProtocol::SUCCESS << endl;
     return 0;
 }
