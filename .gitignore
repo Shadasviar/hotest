@@ -1,5 +1,6 @@
 # C++ objects and libs
 
+*.directory
 *.slo
 *.lo
 *.o
@@ -37,3 +38,4 @@ Makefile*
 # QtCtreator CMake
 CMakeLists.txt.user*
 
+*.hi
