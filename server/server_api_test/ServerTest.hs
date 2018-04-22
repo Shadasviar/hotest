@@ -31,10 +31,7 @@ main = do
         let msg = datagram OPEN_SESSION $ extend $ map BSC.pack creds
         putStrLn $ show $ BS.unpack msg
         send sock msg
-        retMb <- recv sock 4
-        let ret = if retMb == Nothing
-                    then BS.pack [0,0,0,0]
-                    else fromJust retMb
+        Just ret <- recv sock 4
         putStrLn $ show $ BS.unpack ret
         let (cmd:size:err:cret:_) = BS.unpack ret
         let retDgram = [
