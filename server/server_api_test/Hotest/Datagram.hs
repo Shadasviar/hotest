@@ -17,7 +17,7 @@ import Prelude hiding (length, head, replicate)
 data Datagram = Datagram {
     cmd :: Command,
     msg :: ByteString
-} deriving (Show)
+} deriving (Show, Eq)
 
 datagram :: Command -> ByteString -> Datagram
 datagram c m = Datagram c m
