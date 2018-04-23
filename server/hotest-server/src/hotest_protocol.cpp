@@ -18,11 +18,8 @@ Datagram HotestProtocol::recvDatagram(int fd) {
     }
 
     dgram.data.resize(dgram.dataSize);
-    if (read(fd, dgram.data.data(), dgram.dataSize) < dgram.dataSize) {
-        slog(SLOG_ERROR, "Read data from client failed\n");
-        dgram.cmd = INVALID_COMMAND;
-        return dgram;
-    }
+    size_t wrote = 0;
+    while ((wrote += read(fd, dgram.data.data()+wrote, dgram.dataSize-wrote)) < dgram.dataSize);
 
     return dgram;
 }
@@ -38,10 +35,8 @@ bool HotestProtocol::sendDatagram(int fd, Datagram&& d) {
         return false;
     }
 
-    if (write(fd, d.data.data(), d.dataSize) < d.dataSize) {
-        slog(SLOG_ERROR, "Write data to client failed\n");
-        return false;
-    }
+    size_t wrote = 0;
+    while ((wrote += write(fd, d.data.data()+wrote, d.dataSize-wrote)) < d.dataSize);
 
     return true;
 }
