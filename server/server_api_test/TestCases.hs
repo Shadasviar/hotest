@@ -1,6 +1,8 @@
 module TestCases (
+    sesTestCases,
     testCases,
-    runTest
+    runTest,
+    testSession
 ) 
 where
 
@@ -12,8 +14,8 @@ import Prelude hiding (concat, head, last)
 import Network.Simple.TCP
 
 
-testCases :: [(String, Datagram, Datagram)]
-testCases = [
+sesTestCases :: [(String, Datagram, Datagram)]
+sesTestCases = [
         ("OPEN_SESSION admin admin",
         datagram OPEN_SESSION $ opSesData ["admin", "admin"],
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd OPEN_SESSION]
@@ -24,16 +26,36 @@ testCases = [
         )
     ]
 
-runTest :: (String, Datagram, Datagram) -> IO ()
-runTest (name, out, expected) = do
+testCases :: [(String, Datagram, Datagram)]
+testCases = [
+        ("GET_TEST_LIST_SIZE 0",
+        datagram GET_TEST_LIST_SIZE $ empty,
+        datagram ERROR_DATAGRAM $ singleton 0
+        ),
+        ("CLOSE_SESSION",
+        datagram CLOSE_SESSION $ empty,
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd OPEN_SESSION]
+        )
+    ]
+
+runTest :: Socket -> (String, Datagram, Datagram) -> IO ()
+runTest s (name, out, expected) = do
+    putStr $ name ++ " ... "
+    writeDatagram s out
+    res <- readDatagram s
+    putStrLn $ testRes res $ res == expected
+            
+testSession :: (String, Datagram, Datagram) -> IO ()
+testSession (name, out, expected) = do
     connect "127.0.0.1" "6666" $ \(sock, addr) -> do
         putStr $ name ++ " ... "
         writeDatagram sock out
         res <- readDatagram sock
-        putStrLn $ ret res $ res == expected
-        where
-            ret _ True  = "[  OK  ]"
-            ret res False = "[FAILED] " ++ show res
+        putStrLn $ testRes res $ res == expected
 
 opSesData :: [String] -> ByteString
 opSesData x = concat $ zipWith completeMsg (map BSC.pack x) [20,30]
+
+testRes :: Datagram -> Bool -> String
+testRes _ True = "[  OK  ]"
+testRes res _ = "[FAILED] " ++ show res
