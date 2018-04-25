@@ -3,13 +3,16 @@
 #include <unistd.h>
 #include <cstring>
 #include <session.h>
+#include <thread>
 
 using namespace std;
 
 void action(const struct sockaddr_in* client,
             const int fd) {
-    Session session(fd);
-    session.run();
+    std::thread thread([fd](){
+        Session(fd).run();
+    });
+    thread.detach();
 }
 
 int main(int argc, char** argv) {
@@ -43,6 +46,7 @@ int main(int argc, char** argv) {
 
     slog(SLOG_INFO, "Start time server on port %u\n", port);
 
+    ignore_sigpipe();
     start_server(port, action);
 
     return 0;

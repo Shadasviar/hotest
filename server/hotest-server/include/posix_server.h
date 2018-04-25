@@ -43,6 +43,11 @@ void start_server(
  */
 int connect_server(const char* address, const char* port);
 
+/**
+ * @brief ignore_sigpipe signal from OS
+ */
+void ignore_sigpipe();
+
 #ifdef __cplusplus
 }
 #endif

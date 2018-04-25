@@ -8,6 +8,8 @@
 
 using namespace HotestProtocol;
 
+#define CLIENT_DEAD_ERROR
+
 Session::Session(int fd) :
     _clientFd(fd)
 {
@@ -43,4 +45,91 @@ bool Session::run()
     }
 
     sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, SUCCESS));
+    _connected = true;
+
+    while (_connected) {
+        Datagram dtg = recvDatagram(_clientFd);
+        _operations[dtg.cmd](std::move(dtg));
+    }
+}
+
+void Session::closeSession(Datagram &&)
+{
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(CLOSE_SESSION, SUCCESS));
+    _connected = false;
+}
+
+void Session::getTestListSize(Datagram &&)
+{
+    bool ret = sendDatagram(_clientFd, Datagram(GET_TEST_LIST_SIZE, 1, {0}));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::getTest(Datagram && dtg)
+{
+    Datagram response;
+    response.cmd = GET_TEST;
+    std::string resStr = "{'text':'TEST', 'variants':['OPT1','OPT2']}";
+    response.data = std::vector<uint8_t>(resStr.begin(), resStr.end());
+    response.dataSize = response.data.size();
+
+    bool ret = sendDatagram(_clientFd, std::move(response));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::sendTestAnswers(Datagram && dtg)
+{
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(SEND_TEST_ANSWERS, SUCCESS));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::getResult(Datagram &&)
+{
+    Datagram response;
+    response.cmd = GET_RESULTS;
+    std::string resStr = "{'pass':'80', 'all':'100'}";
+    response.data = std::vector<uint8_t>(resStr.begin(), resStr.end());
+    response.dataSize = response.data.size();
+
+    bool ret = sendDatagram(_clientFd, std::move(response));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::invalidCommand(Datagram &&)
+{
+    bool ret = false;
+    ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, BAD_COMMAND));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::openSession(Datagram &&)
+{
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, BAD_COMMAND));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::changeCredentials(Datagram &&)
+{
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(CHANGE_CREDENTIALS, SUCCESS));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::addGroup(Datagram &&)
+{
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_GROUP, SUCCESS));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::addUser(Datagram &&)
+{
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_USER, SUCCESS));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::cliendDeadErrorExit()
+{
+    slog(SLOG_ERROR, std::string("Client ["+
+                                 _login +
+                                 "] dead ... close connection\n").c_str());
+    _connected = false;
 }

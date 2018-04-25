@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
+#include <signal.h>
 
 uint8_t SLOG_ERROR = STDERR_FILENO;
 uint8_t SLOG_INFO = STDOUT_FILENO;
@@ -110,4 +111,8 @@ int connect_server(const char* address, const char* portstr) {
     }
 
     return fd;
+}
+
+void ignore_sigpipe() {
+    signal(SIGPIPE, SIG_IGN);
 }
