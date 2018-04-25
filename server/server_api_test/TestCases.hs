@@ -12,6 +12,7 @@ import qualified Data.ByteString.Char8 as BSC
 import Data.ByteString hiding (map, putStrLn, zipWith, length, putStr)
 import Prelude hiding (concat, head, last)
 import Network.Simple.TCP
+import Text.Printf
 
 
 sesTestCases :: [(String, Datagram, Datagram)]
@@ -34,13 +35,13 @@ testCases = [
         ),
         ("CLOSE_SESSION",
         datagram CLOSE_SESSION $ empty,
-        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd OPEN_SESSION]
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd CLOSE_SESSION]
         )
     ]
 
 runTest :: Socket -> (String, Datagram, Datagram) -> IO ()
 runTest s (name, out, expected) = do
-    putStr $ name ++ " ... "
+    printf "%-40s" $ name ++ " ... "
     writeDatagram s out
     res <- readDatagram s
     putStrLn $ testRes res $ res == expected
@@ -48,10 +49,11 @@ runTest s (name, out, expected) = do
 testSession :: (String, Datagram, Datagram) -> IO ()
 testSession (name, out, expected) = do
     connect "127.0.0.1" "6666" $ \(sock, addr) -> do
-        putStr $ name ++ " ... "
+        printf "%-40s" $ name ++ " ... "
         writeDatagram sock out
         res <- readDatagram sock
         putStrLn $ testRes res $ res == expected
+        closeSock sock
 
 opSesData :: [String] -> ByteString
 opSesData x = concat $ zipWith completeMsg (map BSC.pack x) [20,30]

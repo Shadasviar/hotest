@@ -33,9 +33,21 @@ enum Command : uint8_t {
 enum ErrorCode : uint8_t {
     SUCCESS = 0,
     ACCESS_DENIED,
+    BAD_COMMAND,
 };
 
 struct Datagram {
+    /**
+     * @brief Datagram - constructor of datagram with parameters to fast writing
+     * @param c Command
+     * @param s Size of data
+     * @param d Data as vector<uint8_t> abd size s
+     */
+    Datagram(Command c, uint8_t s, std::vector<uint8_t> d):
+        cmd(c), dataSize(s), data(d){}
+
+    Datagram() = default;
+
     Command cmd = INVALID_COMMAND;
     uint8_t dataSize = 0;
     std::vector<uint8_t> data;
@@ -43,6 +55,11 @@ struct Datagram {
 
 struct ErrorDatagram : Datagram
 {
+    /**
+     * @brief ErrorDatagram - easy constructable response for client
+     * @param c Command responce is send for
+     * @param e Error code of responce
+     */
     ErrorDatagram(Command c, ErrorCode e) {
         cmd = ERROR_DATAGRAM;
         dataSize = 2;
@@ -52,7 +69,20 @@ struct ErrorDatagram : Datagram
     }
 };
 
+/**
+ * @brief recvDatagram - recieve datagram from client given by connected socket file descriptor
+ * @param fd File descriptor of connected to client socket
+ * @return Datagram recieved from client. If error occured,
+ *         returned datagram contains INVALID_COMMAND in cmd field.
+ */
 Datagram recvDatagram(int fd);
+
+/**
+ * @brief sendDatagram - send given datagram to given client
+ * @param fd File descriptor of connected to client socket
+ * @param d Filled datagram to send.
+ * @return True if success, otherwise false.
+ */
 bool sendDatagram(int fd, Datagram&& d);
 
 }

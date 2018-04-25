@@ -10,8 +10,7 @@ using namespace std;
 void action(const struct sockaddr_in* client,
             const int fd) {
     std::thread thread([fd](){
-        Session ses(fd);
-        ses.run();
+        Session(fd).run();
     });
     thread.detach();
 }
@@ -47,6 +46,7 @@ int main(int argc, char** argv) {
 
     slog(SLOG_INFO, "Start time server on port %u\n", port);
 
+    ignore_sigpipe();
     start_server(port, action);
 
     return 0;
