@@ -3,13 +3,17 @@
 #include <unistd.h>
 #include <cstring>
 #include <session.h>
+#include <thread>
 
 using namespace std;
 
 void action(const struct sockaddr_in* client,
             const int fd) {
-    Session session(fd);
-    session.run();
+    std::thread thread([fd](){
+        Session ses(fd);
+        ses.run();
+    });
+    thread.detach();
 }
 
 int main(int argc, char** argv) {

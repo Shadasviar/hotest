@@ -43,4 +43,44 @@ bool Session::run()
     }
 
     sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, SUCCESS));
+
+    while (true) {
+        Datagram dtg = recvDatagram(_clientFd);
+        _operations[dtg.cmd](std::move(dtg));
+    }
+}
+
+void Session::closeSession(Datagram &&)
+{
+
+}
+
+void Session::getTestListSize(Datagram &&)
+{
+
+}
+
+void Session::getTest(Datagram &&)
+{
+
+}
+
+void Session::sendTestAnswers(Datagram &&)
+{
+
+}
+
+void Session::getResult(Datagram &&)
+{
+
+}
+
+void Session::invalidCommand(Datagram &&)
+{
+
+}
+
+void Session::openSession(Datagram &&)
+{
+
 }
