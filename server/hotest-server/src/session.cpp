@@ -79,7 +79,7 @@ void Session::getTest(Datagram && dtg)
 
 void Session::sendTestAnswers(Datagram && dtg)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, SUCCESS));
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(SEND_TEST_ANSWERS, SUCCESS));
     if (!ret) cliendDeadErrorExit();
 }
 
@@ -104,25 +104,25 @@ void Session::invalidCommand(Datagram &&)
 
 void Session::openSession(Datagram &&)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, SUCCESS));
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, BAD_COMMAND));
     if (!ret) cliendDeadErrorExit();
 }
 
 void Session::changeCredentials(Datagram &&)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, SUCCESS));
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(CHANGE_CREDENTIALS, SUCCESS));
     if (!ret) cliendDeadErrorExit();
 }
 
 void Session::addGroup(Datagram &&)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, SUCCESS));
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_GROUP, SUCCESS));
     if (!ret) cliendDeadErrorExit();
 }
 
 void Session::addUser(Datagram &&)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, SUCCESS));
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_USER, SUCCESS));
     if (!ret) cliendDeadErrorExit();
 }
 

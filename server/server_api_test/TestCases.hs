@@ -29,9 +29,33 @@ sesTestCases = [
 
 testCases :: [(String, Datagram, Datagram)]
 testCases = [
-        ("GET_TEST_LIST_SIZE 0",
+        ("GET_TEST_LIST_SIZE",
         datagram GET_TEST_LIST_SIZE $ empty,
-        datagram ERROR_DATAGRAM $ singleton 0
+        datagram GET_TEST_LIST_SIZE $ singleton 0
+        ),
+        ("GET_TEST",
+        datagram GET_TEST $ singleton 1,
+        datagram GET_TEST $ BSC.pack "{'text':'TEST', 'variants':['OPT1','OPT2']}"
+        ),
+        ("SEND_TEST_ANSWERS",
+        datagram SEND_TEST_ANSWERS $ BSC.pack "{'answers':['1':'1', '2':'0']}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd SEND_TEST_ANSWERS]
+        ),
+        ("CHANGE_CREDENTIALS",
+        datagram CHANGE_CREDENTIALS $ opSesData ["lol", "lol"],
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd CHANGE_CREDENTIALS]
+        ),
+        ("GET_RESULTS",
+        datagram GET_RESULTS $ empty,
+        datagram GET_RESULTS $ BSC.pack "{'pass':'80', 'all':'100'}"
+        ),
+        ("ADD_GROUP",
+        datagram ADD_GROUP $ BSC.pack "Group test",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_GROUP]
+        ),
+        ("ADD_USER",
+        datagram ADD_USER $ opSesData ["User", "123"],
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_USER]
         ),
         ("CLOSE_SESSION",
         datagram CLOSE_SESSION $ empty,
