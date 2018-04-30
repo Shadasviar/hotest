@@ -8,10 +8,24 @@
 
 using FunctionalExtensions::Maybe;
 
+/**
+ * @brief The Database class incapsulates low-level operations on database
+ */
 class Database
 {
 public:
+    /**
+     * @brief get instance of Database singleton.
+     * @return unique instance of connected database.
+     */
     static Database& getInstance();
+
+    /**
+     * @brief getPassword - get hashed password of user from database by login
+     * @param login - login of user whose password to find
+     * @return if user specified by login was found returns his password fom database
+     *         packed in Maybe type, otherwise returns empty Maybe object (as nothing).
+     */
     Maybe<std::string> getPassword(std::string login);
 
 private:

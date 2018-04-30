@@ -8,7 +8,10 @@
 #include <numeric>
 #include <type_traits>
 
-
+/**
+ * A small template library provides tools
+ * for more easy functional-programming style.
+ */
 namespace FunctionalExtensions {
 
 template <typename T>
@@ -102,6 +105,12 @@ T filter(const T& x, auto f) {
 }
 
 template <typename T>
+/**
+ * @brief fold - accumulate value from container with given function
+ * @param x - container to be accumulated
+ * @param init - initial value of accumulator
+ * @param f - accumulating function of type elem -> accumulator -> accumulator. See std::accumulate.
+ */
 auto fold(const T& x, auto init, auto f){
     return std::accumulate(begin(x), end(x), init,  f);
 }

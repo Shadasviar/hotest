@@ -30,6 +30,8 @@ bool Session::run()
         Datagram dtg = recvDatagram(_clientFd);
         _operations[dtg.cmd](std::move(dtg));
     }
+
+    return true;
 }
 
 void Session::closeSession(Datagram &&)

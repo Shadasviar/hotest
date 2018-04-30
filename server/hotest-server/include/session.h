@@ -8,13 +8,27 @@
 
 #define SHIFT(member_f) (std::bind(&Session::member_f, this, std::placeholders::_1))
 
+/**
+ * @brief The Session class - describes authorized connection with client.
+ */
 class Session
 {
 
 using Operation = std::function<void(HotestProtocol::Datagram&&)>;
 
 public:
+    /**
+     * @brief Session constructor
+     * @param fd - file descriptor of connected with client socket
+     */
     Session(int fd);
+
+    /**
+     * @brief run - try authorize client and start communication
+     *        with it in infinite loop if succeed.
+     * @return false if error occured, otherwise run infinetely. If session was closed by
+     *         CLOSE_SESSION command, returns true.
+     */
     bool run();
 
 private:
