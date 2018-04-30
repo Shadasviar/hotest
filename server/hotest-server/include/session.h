@@ -28,7 +28,7 @@ private:
     void sendTestAnswers(HotestProtocol::Datagram&&dtg);
     void getResult(HotestProtocol::Datagram&&);
     void invalidCommand(HotestProtocol::Datagram&&);
-    void openSession(HotestProtocol::Datagram&&);
+    void openSession(HotestProtocol::Datagram&&dtg);
     void changeCredentials(HotestProtocol::Datagram&&);
     void addGroup(HotestProtocol::Datagram&&);
     void addUser(HotestProtocol::Datagram&&);

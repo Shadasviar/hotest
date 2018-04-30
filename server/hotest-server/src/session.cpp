@@ -5,10 +5,10 @@
 #include <cstring>
 #include <cerrno>
 #include <string>
+#include <database.h>
+#include <openssl/sha.h>
 
 using namespace HotestProtocol;
-
-#define CLIENT_DEAD_ERROR
 
 Session::Session(int fd) :
     _clientFd(fd)
@@ -18,34 +18,13 @@ Session::Session(int fd) :
 
 bool Session::run()
 {
-    Datagram cmd = recvDatagram(_clientFd);
-    if (cmd.cmd != OPEN_SESSION) {
-        slog(SLOG_INFO, "Client autentification failed\n");
-        sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, ACCESS_DENIED));
-        return false;
-    }
-    if (cmd.dataSize < LOGIN_BYTE_SIZE + PASSWORD_BYTE_SIZE) {
-        slog(SLOG_INFO, "Bad data size recieved from client\n");
-        sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, ACCESS_DENIED));
-        return false;
-    }
-    char login[LOGIN_BYTE_SIZE] =  {0};
-    strncpy(login, (char*)cmd.data.data(), LOGIN_BYTE_SIZE);
-    if (!login) return false;
-    _login = login;
-
-    char password[PASSWORD_BYTE_SIZE] =  {0};
-    strncpy(password, (char*)(cmd.data.data() + LOGIN_BYTE_SIZE), PASSWORD_BYTE_SIZE);
-    if (!password) return false;
-    std::string pas = password;
-
-    if (pas != "admin" || _login != "admin") {
-        sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, ACCESS_DENIED));
+    Datagram ses = recvDatagram(_clientFd);
+    if (ses.cmd != OPEN_SESSION) {
+        slog(SLOG_INFO, "No authorized user tried to connect");
         return false;
     }
 
-    sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, SUCCESS));
-    _connected = true;
+    _operations[ses.cmd](std::move(ses));
 
     while (_connected) {
         Datagram dtg = recvDatagram(_clientFd);
@@ -102,10 +81,29 @@ void Session::invalidCommand(Datagram &&)
     if (!ret) cliendDeadErrorExit();
 }
 
-void Session::openSession(Datagram &&)
+void Session::openSession(Datagram &&dtg)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, BAD_COMMAND));
-    if (!ret) cliendDeadErrorExit();
+    using namespace FunctionalExtensions;
+
+    char login[LOGIN_BYTE_SIZE];
+    char passGot[PASSWORD_BYTE_SIZE];
+    strncpy(login, (char*)dtg.data.data(), LOGIN_BYTE_SIZE);
+    strncpy(passGot, (char*)dtg.data.data() + LOGIN_BYTE_SIZE, PASSWORD_BYTE_SIZE);
+
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, passGot, PASSWORD_BYTE_SIZE);
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_Final(hash, &sha256);
+    auto pass = Database::getInstance().getPassword(login);
+
+    if (!pass || (0 != memcmp(hash, (*pass).c_str(), SHA256_DIGEST_LENGTH))) {
+        slog(SLOG_ERROR, "Bad login or password\n");
+        sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, ACCESS_DENIED));
+        return;
+    }
+    sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, SUCCESS));
+    _connected = true;
 }
 
 void Session::changeCredentials(Datagram &&)
