@@ -2,5 +2,7 @@ set(HEADERS
     ${CMAKE_CURRENT_LIST_DIR}/hotest_protocol.h
     ${CMAKE_CURRENT_LIST_DIR}/posix_server.h
     ${CMAKE_CURRENT_LIST_DIR}/session.h
+    ${CMAKE_CURRENT_LIST_DIR}/database.h
+    ${CMAKE_CURRENT_LIST_DIR}/functional_extensions.h
     PARENT_SCOPE
     )

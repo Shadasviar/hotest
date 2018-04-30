@@ -21,12 +21,17 @@ sesTestCases = [
         datagram OPEN_SESSION $ opSesData ["admin", "admin"],
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd OPEN_SESSION]
         ),
-        ("OPEN_SESSION lol lol",
+        ("OPEN_SESSION as unexisting user",
         datagram OPEN_SESSION $ opSesData ["lol", "lol"],
         datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd OPEN_SESSION]
+        ),
+        ("OPEN_SESSION as test user",
+        datagram OPEN_SESSION $ opSesData ["t.user", "test"],
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd OPEN_SESSION]
         )
     ]
 
+-- Test cases in format (Name, Datagram to be sent, expected answer datagram)
 testCases :: [(String, Datagram, Datagram)]
 testCases = [
         ("GET_TEST_LIST_SIZE",
