@@ -43,9 +43,10 @@ private:
     void getResult(HotestProtocol::Datagram&&);
     void invalidCommand(HotestProtocol::Datagram&&);
     void openSession(HotestProtocol::Datagram&&dtg);
-    void changeCredentials(HotestProtocol::Datagram&&);
-    void addGroup(HotestProtocol::Datagram&&);
-    void addUser(HotestProtocol::Datagram&&);
+    void changeCredentials(HotestProtocol::Datagram&&dtg);
+    void addGroup(HotestProtocol::Datagram&&dtg);
+    void addUser(HotestProtocol::Datagram&&dtg);
+    void deleteUser(HotestProtocol::Datagram&&dtg);
 
     std::map<HotestProtocol::Command, Operation> _operations {
         {HotestProtocol::INVALID_COMMAND,   SHIFT(invalidCommand)},
@@ -58,9 +59,11 @@ private:
         {HotestProtocol::CHANGE_CREDENTIALS,SHIFT(changeCredentials)},
         {HotestProtocol::ADD_GROUP,         SHIFT(addGroup)},
         {HotestProtocol::ADD_USER,          SHIFT(addUser)},
+        {HotestProtocol::DELETE_USER,       SHIFT(deleteUser)},
     };
 
     void cliendDeadErrorExit();
+    std::string hash(std::string str);
 };
 
 #endif // SESSION_H

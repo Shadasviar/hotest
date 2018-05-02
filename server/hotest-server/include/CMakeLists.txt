@@ -4,5 +4,6 @@ set(HEADERS
     ${CMAKE_CURRENT_LIST_DIR}/session.h
     ${CMAKE_CURRENT_LIST_DIR}/database.h
     ${CMAKE_CURRENT_LIST_DIR}/functional_extensions.h
+    ${CMAKE_CURRENT_LIST_DIR}/json.hpp
     PARENT_SCOPE
     )

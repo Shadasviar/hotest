@@ -7,8 +7,10 @@
 #include <string>
 #include <database.h>
 #include <openssl/sha.h>
+#include <json.hpp>
 
 using namespace HotestProtocol;
+using json = nlohmann::json;
 
 Session::Session(int fd) :
     _clientFd(fd)
@@ -31,12 +33,14 @@ bool Session::run()
         _operations[dtg.cmd](std::move(dtg));
     }
 
+    slog(SLOG_INFO, "[%s]disconnected\n", _login.c_str());
     return true;
 }
 
 void Session::closeSession(Datagram &&)
 {
     bool ret = sendDatagram(_clientFd, ErrorDatagram(CLOSE_SESSION, SUCCESS));
+    ret = ret;
     _connected = false;
 }
 
@@ -68,7 +72,11 @@ void Session::getResult(Datagram &&)
 {
     Datagram response;
     response.cmd = GET_RESULTS;
-    std::string resStr = "{'pass':'80', 'all':'100'}";
+    json res = {
+        {"all", 100},
+        {"pass", 80},
+    };
+    std::string resStr = res.dump();
     response.data = std::vector<uint8_t>(resStr.begin(), resStr.end());
     response.dataSize = response.data.size();
 
@@ -78,8 +86,7 @@ void Session::getResult(Datagram &&)
 
 void Session::invalidCommand(Datagram &&)
 {
-    bool ret = false;
-    ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, BAD_COMMAND));
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(ERROR_DATAGRAM, BAD_COMMAND));
     if (!ret) cliendDeadErrorExit();
 }
 
@@ -91,45 +98,137 @@ void Session::openSession(Datagram &&dtg)
     char passGot[PASSWORD_BYTE_SIZE];
     strncpy(login, (char*)dtg.data.data(), LOGIN_BYTE_SIZE);
     strncpy(passGot, (char*)dtg.data.data() + LOGIN_BYTE_SIZE, PASSWORD_BYTE_SIZE);
+    _login = login;
+    std::string passGotStr(PASSWORD_BYTE_SIZE, 0);
+    strncpy((char*)passGotStr.data(), passGot, PASSWORD_BYTE_SIZE);
 
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, passGot, PASSWORD_BYTE_SIZE);
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_Final(hash, &sha256);
     auto pass = Database::getInstance().getPassword(login);
+    auto x = hash(passGotStr);
 
-    if (!pass || (0 != memcmp(hash, (*pass).c_str(), SHA256_DIGEST_LENGTH))) {
-        slog(SLOG_ERROR, "Bad login or password\n");
-        sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, ACCESS_DENIED));
+    if (!pass || *pass != Session::hash(passGotStr)) {
+        slog(SLOG_INFO, "[%s]Bad login or password\n", _login.c_str());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
         return;
     }
     sendDatagram(_clientFd, ErrorDatagram(OPEN_SESSION, SUCCESS));
+    slog(SLOG_INFO, "[%s]Connected\n", _login.c_str());
     _connected = true;
 }
 
-void Session::changeCredentials(Datagram &&)
+void Session::changeCredentials(Datagram &&dtg)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(CHANGE_CREDENTIALS, SUCCESS));
+    char newLogin[LOGIN_BYTE_SIZE];
+
+    strncpy(newLogin, (char*)dtg.data.data(), LOGIN_BYTE_SIZE);
+
+    std::string newPassword(PASSWORD_BYTE_SIZE, 0);
+    strncpy((char*)newPassword.c_str(), (char*)dtg.data.data() + LOGIN_BYTE_SIZE, PASSWORD_BYTE_SIZE);
+
+    bool ret = Database::getInstance().changeCredentials(_login, std::string(newLogin), hash(newPassword));
+    if (!ret) {
+        ret = sendDatagram(_clientFd, ErrorDatagram(CHANGE_CREDENTIALS, GENERIC_ERROR));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    slog(SLOG_INFO, "[%s]login changed to %s\n", _login.c_str(), newLogin);
+    _login = std::string(newLogin);
+    ret = sendDatagram(_clientFd, ErrorDatagram(CHANGE_CREDENTIALS, SUCCESS));
     if (!ret) cliendDeadErrorExit();
 }
 
-void Session::addGroup(Datagram &&)
+void Session::addGroup(Datagram &&dtg)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_GROUP, SUCCESS));
+    if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::ADMIN])) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_GROUP, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    std::string grpName(dtg.data.size(), 0);
+    memcpy((char*)grpName.data(), dtg.data.data(), dtg.data.size());
+    bool ret = Database::getInstance().addGroup(grpName);
+    if (!ret) {
+        ret = sendDatagram(_clientFd, ErrorDatagram(ADD_GROUP, ALREADY_EXISTS));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+    ret = sendDatagram(_clientFd, ErrorDatagram(ADD_GROUP, SUCCESS));
+    slog(SLOG_INFO, "[%s]add group '%s'\n", _login.c_str(), grpName.c_str());
     if (!ret) cliendDeadErrorExit();
 }
 
-void Session::addUser(Datagram &&)
+void Session::addUser(Datagram &&dtg)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_USER, SUCCESS));
+    if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::ADMIN])) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_USER, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    std::string login, password, name, surname;
+    try {
+        json userdata = json::parse(dtg.data);
+        login       = userdata["login"];
+        password    = userdata["password"];
+        name        = userdata["name"];
+        surname     = userdata["surname"];
+    } catch (std::exception &e) {
+        slog(SLOG_ERROR, "[%s]user data parse error: %s\n", _login.c_str(), e.what());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_USER, BAD_COMMAND));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    bool ret = Database::getInstance().addUser(login, hash(password), name, surname);
+    if (!ret) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_USER, ALREADY_EXISTS));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+    ret = sendDatagram(_clientFd, ErrorDatagram(ADD_USER, SUCCESS));
+    slog(SLOG_INFO, "[%s]add user '%s'\n", _login.c_str(), login.c_str());
     if (!ret) cliendDeadErrorExit();
+}
+
+void Session::deleteUser(Datagram &&dtg)
+{
+    if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::ADMIN])) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(DELETE_USER, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    std::string login(dtg.data.size(), 0);
+    memcpy((char*)login.data(), dtg.data.data(), dtg.data.size());
+
+    bool ret = Database::getInstance().deleteUser(login);
+    if (!ret) {
+        ret = sendDatagram(_clientFd, ErrorDatagram(DELETE_USER, GENERIC_ERROR));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    slog(SLOG_INFO, "[%s]delete user '%s'", _login.c_str(), login.c_str());
+    ret = sendDatagram(_clientFd, ErrorDatagram(DELETE_USER, SUCCESS));
+    if (!ret) cliendDeadErrorExit();
+    return;
 }
 
 void Session::cliendDeadErrorExit()
 {
-    slog(SLOG_ERROR, std::string("Client ["+
-                                 _login +
-                                 "] dead ... close connection\n").c_str());
     _connected = false;
+}
+
+std::string Session::hash(std::string str)
+{
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, str.c_str(), str.size());
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_Final(hash, &sha256);
+    std::string res(SHA256_DIGEST_LENGTH, 0);
+    memcpy((char*)res.data(), hash, SHA256_DIGEST_LENGTH);
+    return res;
 }
