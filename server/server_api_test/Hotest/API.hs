@@ -21,10 +21,13 @@ data Command = INVALID_COMMAND
     | ADD_GROUP
     | ADD_USER
     | ERROR_DATAGRAM
+    | DELETE_USER
     deriving (Enum, Show, Eq)
 
 data ErrorCode = SUCCESS 
     | ACCESS_DENIED 
+    | BAD_COMMAND
+    | ALREADY_EXISTS
     deriving (Enum, Show, Eq)
     
 toCmd :: Word8 -> Command

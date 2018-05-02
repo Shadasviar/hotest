@@ -14,4 +14,16 @@ main = do
         if res == expectedAnswer
            then putStrLn "Connected ... "
            else die "Connection to server failed"
-        mapM_ (runTest sock) testCases
+        mapM_ (runTest sock) testCasesTestUser
+        closeSock sock
+    connect "127.0.0.1" "6666" $ \(sock, addr) -> do
+        putStrLn "Run admin tests ... "
+        let (_, creds, expectedAnswer) = head sesTestCases
+        writeDatagram sock creds
+        res <- readDatagram sock
+        if res == expectedAnswer
+           then putStrLn "Connected ... "
+           else die "Connection to server failed"
+        mapM_ (runTest sock) testCasesAdmin
+        closeSock sock
+    mapM_ testSession sesTestCases

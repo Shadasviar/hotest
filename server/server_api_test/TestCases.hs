@@ -1,6 +1,7 @@
 module TestCases (
     sesTestCases,
-    testCases,
+    testCasesTestUser,
+    testCasesAdmin,
     runTest,
     testSession
 ) 
@@ -32,8 +33,8 @@ sesTestCases = [
     ]
 
 -- Test cases in format (Name, Datagram to be sent, expected answer datagram)
-testCases :: [(String, Datagram, Datagram)]
-testCases = [
+testCasesTestUser :: [(String, Datagram, Datagram)]
+testCasesTestUser = [
         ("GET_TEST_LIST_SIZE",
         datagram GET_TEST_LIST_SIZE $ empty,
         datagram GET_TEST_LIST_SIZE $ singleton 0
@@ -50,21 +51,62 @@ testCases = [
         datagram CHANGE_CREDENTIALS $ opSesData ["lol", "lol"],
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd CHANGE_CREDENTIALS]
         ),
+        ("CHANGE_CREDENTIALS back",
+        datagram CHANGE_CREDENTIALS $ opSesData ["t.user", "test"],
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd CHANGE_CREDENTIALS]
+        ),
         ("GET_RESULTS",
         datagram GET_RESULTS $ empty,
-        datagram GET_RESULTS $ BSC.pack "{'pass':'80', 'all':'100'}"
+        datagram GET_RESULTS $ BSC.pack "{\"all\":100,\"pass\":80}"
         ),
         ("ADD_GROUP",
         datagram ADD_GROUP $ BSC.pack "Group test",
-        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_GROUP]
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd ADD_GROUP]
         ),
         ("ADD_USER",
         datagram ADD_USER $ opSesData ["User", "123"],
-        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_USER]
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd ADD_USER]
+        ),
+        ("DELETE_USER",
+        datagram DELETE_USER $ opSesData ["admin"],
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd DELETE_USER]
         ),
         ("CLOSE_SESSION",
         datagram CLOSE_SESSION $ empty,
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd CLOSE_SESSION]
+        )
+    ]
+
+-- Test cases in format (Name, Datagram to be sent, expected answer datagram)
+testCasesAdmin :: [(String, Datagram, Datagram)]
+testCasesAdmin = [
+        ("Add new group",
+        datagram ADD_GROUP $ BSC.pack "New group",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_GROUP]
+        ),
+        ("Add already existing group",
+        datagram ADD_GROUP $ BSC.pack "New group",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ALREADY_EXISTS, fromCmd ADD_GROUP]
+        ),
+        ("Add default group",
+        datagram ADD_GROUP $ BSC.pack "Admins",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ALREADY_EXISTS, fromCmd ADD_GROUP]
+        ),
+        ("Add new user",
+        datagram ADD_USER $ opSesData ["{\"login\":\"User\",\"password\":\"12345sd\",\"name\":\"Test new\",\"surname\":\"SurnameXXX\"}"],
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_USER]
+        ),
+        ("Delete user",
+        datagram DELETE_USER $ BSC.pack "User",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd DELETE_USER]
+        ),
+        ("Add existing user",
+        datagram ADD_USER $ opSesData ["{\"login\":\"t.user\",\"password\":\"12345sd\",\"name\":\"Test new\",\"surname\":\"SurnameXXX\"}"],
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ALREADY_EXISTS, fromCmd ADD_USER]
+        ),
+        ("Add user bad format",
+        datagram ADD_USER $ opSesData ["{\"log\":\"df\"}"],
+        datagram ERROR_DATAGRAM $ pack [fromErrCode BAD_COMMAND, fromCmd ADD_USER]
         )
     ]
 

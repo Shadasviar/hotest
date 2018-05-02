@@ -5,6 +5,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_LIST_DIR}/include)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/include)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/src)
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 set(DB_DIR ${CMAKE_CURRENT_LIST_DIR}/database)
 
 add_custom_target(

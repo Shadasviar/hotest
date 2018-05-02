@@ -21,6 +21,7 @@ enum Command : uint8_t {
     ADD_GROUP,
     ADD_USER,
     ERROR_DATAGRAM,
+    DELETE_USER,
 };
 
 #define LOGIN_BYTE_SIZE 20
@@ -34,6 +35,8 @@ enum ErrorCode : uint8_t {
     SUCCESS = 0,
     ACCESS_DENIED,
     BAD_COMMAND,
+    ALREADY_EXISTS,
+    GENERIC_ERROR,
 };
 
 struct Datagram {
