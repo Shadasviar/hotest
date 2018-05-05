@@ -1,11 +1,11 @@
 #include "database.h"
 #include <posix_server.h>
 #include <mutex>
+#include <list>
 
 std::map<Database::ACCESS_GROUP, std::string> Database::defaultGroups {
     {Database::ADMIN, "Admins"},
     {Database::EXAMINATOR, "Examinators"},
-    {Database::USER, "Students"},
 };
 
 Database::Database(std::string l):
@@ -19,6 +19,22 @@ Database::Database(std::string l):
         return;
     }
     _db.reset(dbPtr);
+}
+
+bool Database::execQuery(std::string userQuery,
+                         std::string userErrmsg,
+                         int (*callback)(void*,int,char**,char**),
+                         void *data)
+{
+    char* errmsg;
+    std::string query(userQuery);
+    int ret = sqlite3_exec(_db.get(), query.c_str(), callback, data, &errmsg);
+    std::unique_ptr<char, decltype(&sqlite3_free)> errmsgPtr(errmsg, sqlite3_free);
+    if (ret != SQLITE_OK) {
+        slog(SLOG_INFO, std::string(userErrmsg + ": %s\n").c_str(), errmsg);
+        return false;
+    }
+    return true;
 }
 
 Database &Database::getInstance()
@@ -46,13 +62,11 @@ Maybe<std::string> Database::getPassword(std::string login)
 
     std::string query("SELECT login, password from Users");
     void* data[2] = {(void*)&login, (void*)&res};
-    int ret = sqlite3_exec(_db.get(), query.c_str(), callback, (void*)data, nullptr);
-    if (ret != SQLITE_OK) {
-        slog(SLOG_ERROR, "Failed query to database\n");
-        return nothing<std::string>();
+    if (execQuery(query, "Failed connection to database", callback, (void*)data)) {
+        return res;
     }
 
-    return res;
+    return nothing<std::string>();
 }
 
 bool Database::changeCredentials(std::string oldLogin, std::string login, std::string password)
@@ -60,16 +74,8 @@ bool Database::changeCredentials(std::string oldLogin, std::string login, std::s
     static std::mutex mtx;
     std::lock_guard<std::mutex> lck(mtx);
 
-    char* errmsg;
-    std::string query("UPDATE Users SET Login='"+login+"', Password='"+password+"' WHERE Login='"+oldLogin+"';");
-    int ret = sqlite3_exec(_db.get(), query.c_str(), nullptr, nullptr, &errmsg);
-    std::unique_ptr<char, decltype(&sqlite3_free)> errmsgPtr(errmsg, sqlite3_free);
-    if (ret != SQLITE_OK) {
-        slog(SLOG_INFO, "Update credentials error for user %s: %s\n", oldLogin.c_str(), errmsg);
-        return false;
-    }
-
-    return true;
+    return execQuery("UPDATE Users SET Login='"+login+"', Password='"+password+"' WHERE Login='"+oldLogin+"';",
+                     std::string("Update credentials error for user") + oldLogin.c_str());
 }
 
 bool Database::addGroup(std::string name)
@@ -77,16 +83,8 @@ bool Database::addGroup(std::string name)
     static std::mutex mtx;
     std::lock_guard<std::mutex> lck(mtx);
 
-    char* errmsg;
-    std::string query("INSERT INTO Groups (Name) VALUES ('"+name+"');");
-    int ret = sqlite3_exec(_db.get(), query.c_str(), nullptr, nullptr, &errmsg);
-    std::unique_ptr<char, decltype(&sqlite3_free)> errmsgPtr(errmsg, sqlite3_free);
-    if (ret != SQLITE_OK) {
-        slog(SLOG_INFO, "Add group failed: %s\n", errmsg);
-        return false;
-    }
-
-    return true;
+    return execQuery("INSERT INTO Groups (Name) VALUES ('"+name+"');",
+                     "Add group failed");
 }
 
 bool Database::addUser(std::string login, std::string password, std::string name, std::string surname)
@@ -94,17 +92,9 @@ bool Database::addUser(std::string login, std::string password, std::string name
     static std::mutex mtx;
     std::lock_guard<std::mutex> lck(mtx);
 
-    char* errmsg;
-    std::string query("INSERT INTO Users (login,password,name,surname) "
-                      "VALUES ('"+login+"','"+password+"','"+name+"','"+surname+"');");
-    int ret = sqlite3_exec(_db.get(), query.c_str(), nullptr, nullptr, &errmsg);
-    std::unique_ptr<char, decltype(&sqlite3_free)> errmsgPtr(errmsg, sqlite3_free);
-    if (ret != SQLITE_OK) {
-        slog(SLOG_INFO, "Add user failed: %s\n", errmsg);
-        return false;
-    }
-
-    return true;
+    return execQuery("INSERT INTO Users (login,password,name,surname) "
+                     "VALUES ('"+login+"','"+password+"','"+name+"','"+surname+"');",
+                     "Add user failed");
 }
 
 bool Database::deleteUser(std::string login)
@@ -112,16 +102,22 @@ bool Database::deleteUser(std::string login)
     static std::mutex mtx;
     std::lock_guard<std::mutex> lck(mtx);
 
-    char* errmsg;
-    std::string query("DELETE FROM Users WHERE login='"+login+"';");
-    int ret = sqlite3_exec(_db.get(), query.c_str(), nullptr, nullptr, &errmsg);
-    std::unique_ptr<char, decltype(&sqlite3_free)> errmsgPtr(errmsg, sqlite3_free);
-    if (ret != SQLITE_OK) {
-        slog(SLOG_INFO, "Delete user failed: %s\n", errmsg);
-        return false;
+    return execQuery("DELETE FROM Users WHERE login='"+login+"';",
+                     "Delete user failed");
+}
+
+Maybe<bool> Database::deleteGroup(std::string name)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    using namespace FunctionalExtensions;
+    if(std::count_if(defaultGroups.begin(), defaultGroups.end(), [name](auto& item){return item.second == name;}) > 0) {
+        return nothing<bool>();
     }
 
-    return true;
+    return just(execQuery("DELETE FROM Groups WHERE Name='"+name+"';",
+                     "Delete group failed"));
 }
 
 bool Database::hasAccess(std::string login, std::string group)
@@ -135,19 +131,90 @@ bool Database::hasAccess(std::string login, std::string group)
         return 0;
     };
 
-    char* errmsg;
     bool res(false);
-    std::string query("SELECT Groups.Name FROM Users "
-                      "JOIN GroupsMembers ON GroupsMembers.id = Users.id "
-                      "JOIN Groups ON Groups.groupeid = GroupsMembers.groupeId "
-                      "WHERE Users.login = '"+login+"' AND Groups.Name = '"+group+"'; ");
-    int ret = sqlite3_exec(_db.get(), query.c_str(), callback, (void*)&res, &errmsg);
-    std::unique_ptr<char, decltype(&sqlite3_free)> errmsgPtr(errmsg, sqlite3_free);
-    if (ret != SQLITE_OK) {
-        slog(SLOG_INFO, "Check access failed: %s\n", errmsg);
-        return false;
-    }
+    bool ret = execQuery("SELECT Groups.Name FROM Users "
+                     "JOIN GroupsMembers ON GroupsMembers.id = Users.id "
+                     "JOIN Groups ON Groups.groupeid = GroupsMembers.groupeId "
+                     "WHERE Users.login = '"+login+"' AND Groups.Name = '"+group+"'; ",
+                     "Check access failed",
+                     callback, (void*)&res);
+    if (ret) return res;
+    return false;
+}
 
-    return res;
+Maybe<nlohmann::json> Database::getUserInfo(std::string login)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    using namespace FunctionalExtensions;
+
+    json responce;
+
+    auto callbackUser = [](void* data , int , char **argv, char **) -> int {
+        json* responce = (json*)data;
+        (*responce)["login"]    = argv[0];
+        (*responce)["name"]     = argv[1];
+        (*responce)["surname"]  = argv[2];
+        return 0;
+    };
+
+    auto callbackGroups = [](void* data , int , char **argv, char **) -> int {
+        auto* grps = (std::list<std::string>*)data;
+        grps->push_back(argv[0]);
+        return 0;
+    };
+
+    bool ret = execQuery("SELECT login,name,ifnull(surname, '') FROM Users WHERE login='"+login+"';",
+                         "Getting user info failed",
+                         callbackUser, (void*)&responce);
+    if (!ret) return nothing<json>();
+
+    std::list<std::string> grps;
+    ret = execQuery("SELECT Groups.name FROM Groups "
+                    "JOIN GroupsMembers ON GroupsMembers.groupeId=Groups.groupeId "
+                    "JOIN Users ON Users.id = GroupsMembers.id "
+                    "WHERE Users.login='"+login+"';",
+                    "Getting groups failed",
+                    callbackGroups, (void*)&grps);
+
+    if (!ret) return nothing<json>();
+    if (responce.empty()) return nothing<json>();
+
+    responce["groups"] = grps;
+    return just(responce);
+}
+
+bool Database::updateUser(std::string login, std::string name, std::string surname)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    return execQuery("UPDATE Users SET name = '"+name+"', surname = '"+surname+"' "
+                     "WHERE login ='"+login+"';",
+                     "Update user data failed");
+}
+
+bool Database::addUserToGroup(std::string login, std::string group)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    return execQuery("INSERT INTO GroupsMembers (id, groupeId) "
+                     "SELECT Users.id,Groups.groupeId FROM Users, Groups "
+                     "WHERE Users.Login = '"+login+"' AND Groups.Name = '"+group+"';",
+                     "Add record failed");
+}
+
+bool Database::removeFromGroup(std::string login, std::string group)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    return false;
+    /*return execQuery("INSERT INTO GroupsMembers (id, groupeId) "
+                     "SELECT Users.id,Groups.groupeId FROM Users, Groups "
+                     "WHERE Users.Login = '"+login+"' AND Groups.Name = '"+group+"';",
+                     "Add record failed");*/
 }
 

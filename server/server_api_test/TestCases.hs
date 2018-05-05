@@ -63,13 +63,41 @@ testCasesTestUser = [
         datagram ADD_GROUP $ BSC.pack "Group test",
         datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd ADD_GROUP]
         ),
+        ("DELETE_GROUP",
+        datagram DELETE_GROUP $ BSC.pack "Group test",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd DELETE_GROUP]
+        ),
         ("ADD_USER",
         datagram ADD_USER $ opSesData ["User", "123"],
         datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd ADD_USER]
         ),
         ("DELETE_USER",
-        datagram DELETE_USER $ opSesData ["admin"],
+        datagram DELETE_USER $ BSC.pack "admin",
         datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd DELETE_USER]
+        ),
+        ("GET_USER_INFO",
+        datagram GET_USER_INFO $ BSC.pack "t.user",
+        datagram GET_USER_INFO $ BSC.pack "{\"groups\":[],\"login\":\"t.user\",\"name\":\"Test\\n\",\"surname\":\"User\"}" 
+        ),
+        ("GET_USER_INFO of admin",
+        datagram GET_USER_INFO $ BSC.pack "admin",
+        datagram GET_USER_INFO $ BSC.pack "{\"groups\":[\"Admins\",\"Examinators\"],\"login\":\"admin\",\"name\":\"admin\",\"surname\":\"\"}"
+        ),
+        ("GET_USER_INFO of unexisting user",
+        datagram GET_USER_INFO $ BSC.pack "babuin",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode DOES_NOT_EXISTS, fromCmd GET_USER_INFO]
+        ),
+        ("SET_USER_INFO",
+        datagram SET_USER_INFO $ BSC.pack "{\"login\":\"t.user\",\"surname\":\"User changed\",\"name\":\"Test changed\"}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd SET_USER_INFO]
+        ),
+        ("ADD_TO_GROUP",
+        datagram ADD_TO_GROUP $ BSC.pack "{\"login\":\"User\",\"group\":\"Admins\"}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd ADD_TO_GROUP]
+        ),
+        ("REMOVE_FROM_GROUP",
+        datagram REMOVE_FROM_GROUP $ BSC.pack "{\"login\":\"User\",\"group\":\"Admins\"}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd REMOVE_FROM_GROUP]
         ),
         ("CLOSE_SESSION",
         datagram CLOSE_SESSION $ empty,
@@ -92,9 +120,45 @@ testCasesAdmin = [
         datagram ADD_GROUP $ BSC.pack "Admins",
         datagram ERROR_DATAGRAM $ pack [fromErrCode ALREADY_EXISTS, fromCmd ADD_GROUP]
         ),
+        ("Delete group",
+        datagram DELETE_GROUP $ BSC.pack "New group",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd DELETE_GROUP]
+        ),
+        ("Delete persistant group",
+        datagram DELETE_GROUP $ BSC.pack "Admins",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd DELETE_GROUP]
+        ),
         ("Add new user",
         datagram ADD_USER $ opSesData ["{\"login\":\"User\",\"password\":\"12345sd\",\"name\":\"Test new\",\"surname\":\"SurnameXXX\"}"],
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_USER]
+        ),
+        ("Get info of new user",
+        datagram GET_USER_INFO $ BSC.pack "User",
+        datagram GET_USER_INFO $ BSC.pack "{\"groups\":[],\"login\":\"User\",\"name\":\"Test new\",\"surname\":\"SurnameXXX\"}" 
+        ),
+        ("Set info of new user",
+        datagram SET_USER_INFO $ BSC.pack "{\"login\":\"User\",\"name\":\"Changed user\",\"surname\":\"Changed Surname\"}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd SET_USER_INFO]
+        ),
+        ("Verify changed info",
+        datagram GET_USER_INFO $ BSC.pack "User",
+        datagram GET_USER_INFO $ BSC.pack "{\"groups\":[],\"login\":\"User\",\"name\":\"Changed user\",\"surname\":\"Changed Surname\"}" 
+        ),
+        ("Add user to group",
+        datagram ADD_TO_GROUP $ BSC.pack "{\"login\":\"User\",\"group\":\"Admins\"}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_TO_GROUP]
+        ),
+        ("Verify changed info",
+        datagram GET_USER_INFO $ BSC.pack "User",
+        datagram GET_USER_INFO $ BSC.pack "{\"groups\":[\"Admins\"],\"login\":\"User\",\"name\":\"Changed user\",\"surname\":\"Changed Surname\"}" 
+        ),
+        ("Remove user from group",
+        datagram REMOVE_FROM_GROUP $ BSC.pack "{\"login\":\"User\",\"group\":\"Admins\"}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd REMOVE_FROM_GROUP]
+        ),
+        ("Verify changed info",
+        datagram GET_USER_INFO $ BSC.pack "User",
+        datagram GET_USER_INFO $ BSC.pack "{\"groups\":[],\"login\":\"User\",\"name\":\"Changed user\",\"surname\":\"Changed Surname\"}" 
         ),
         ("Delete user",
         datagram DELETE_USER $ BSC.pack "User",

@@ -22,12 +22,19 @@ data Command = INVALID_COMMAND
     | ADD_USER
     | ERROR_DATAGRAM
     | DELETE_USER
+    | DELETE_GROUP
+    | GET_USER_INFO
+    | SET_USER_INFO
+    | ADD_TO_GROUP
+    | REMOVE_FROM_GROUP
     deriving (Enum, Show, Eq)
 
 data ErrorCode = SUCCESS 
     | ACCESS_DENIED 
     | BAD_COMMAND
     | ALREADY_EXISTS
+    | GENERIC_ERROR
+    | DOES_NOT_EXISTS
     deriving (Enum, Show, Eq)
     
 toCmd :: Word8 -> Command

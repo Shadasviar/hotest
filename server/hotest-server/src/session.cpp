@@ -210,10 +210,135 @@ void Session::deleteUser(Datagram &&dtg)
         return;
     }
 
-    slog(SLOG_INFO, "[%s]delete user '%s'", _login.c_str(), login.c_str());
+    slog(SLOG_INFO, "[%s]delete user '%s'\n", _login.c_str(), login.c_str());
     ret = sendDatagram(_clientFd, ErrorDatagram(DELETE_USER, SUCCESS));
     if (!ret) cliendDeadErrorExit();
     return;
+}
+
+void Session::deleteGroup(Datagram &&dtg)
+{
+    if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::ADMIN])) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(DELETE_GROUP, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    std::string group(dtg.data.size(), 0);
+    memcpy((char*)group.data(), dtg.data.data(), dtg.data.size());
+
+    using namespace FunctionalExtensions;
+    /* If admin tries delete persistant group deny it */
+    auto ret = Database::getInstance().deleteGroup(group);
+    if (!ret) {
+        ret = just(sendDatagram(_clientFd, ErrorDatagram(DELETE_GROUP, ACCESS_DENIED)));
+        if (!*ret) cliendDeadErrorExit();
+        return;
+    }
+
+    if(!*ret) {
+        ret = just(sendDatagram(_clientFd, ErrorDatagram(DELETE_GROUP, DOES_NOT_EXISTS)));
+        if (!*ret) cliendDeadErrorExit();
+        return;
+    }
+
+    slog(SLOG_INFO, "[%s]delete group '%s'\n", _login.c_str(), group.c_str());
+    ret = just(sendDatagram(_clientFd, ErrorDatagram(DELETE_GROUP, SUCCESS)));
+    if (!*ret) cliendDeadErrorExit();
+    return;
+}
+
+void Session::getUserInfo(Datagram &&dtg)
+{
+    std::string login(dtg.data.size(), 0);
+    memcpy((char*)login.data(), dtg.data.data(), dtg.data.size());
+
+    Maybe<json> res = Database::getInstance().getUserInfo(login);
+    if (!res) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(GET_USER_INFO, DOES_NOT_EXISTS));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    Datagram responce;
+    responce.cmd = GET_USER_INFO;
+    std::string msg = (*res).dump();
+    responce.data.resize(msg.size());
+    memcpy(responce.data.data(), msg.data(), msg.size());
+    responce.dataSize = responce.data.size();
+    sendDatagram(_clientFd, std::move(responce));
+}
+
+void Session::setUserInfo(Datagram &&dtg)
+{
+    if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::ADMIN])) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(SET_USER_INFO, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    std::string data(dtg.data.size(), 0);
+    memcpy((char*)data.data(), dtg.data.data(), dtg.data.size());
+
+    bool ret(false);
+    try {
+        json request = json::parse(data);
+        ret = Database::getInstance().updateUser(request["login"], request["name"], request["surname"]);
+        if (!ret) {
+            cliendDeadErrorExit();
+            return;
+        }
+    } catch (std::exception &e) {
+        slog(SLOG_INFO, "[%s]Set user info bad format: %s\n", _login.c_str(), e.what());
+        sendDatagram(_clientFd, ErrorDatagram(SET_USER_INFO, BAD_COMMAND));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    ret = sendDatagram(_clientFd, ErrorDatagram(SET_USER_INFO, SUCCESS));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::addToGroup(Datagram &&dtg)
+{
+    if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::ADMIN])) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TO_GROUP, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    std::string data(dtg.data.size(), 0);
+    memcpy((char*)data.data(), dtg.data.data(), dtg.data.size());
+
+    try {
+        json request = json::parse(data);
+        bool ret = Database::getInstance().addUserToGroup(request["login"], request["group"]);
+        if (!ret) {
+            ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TO_GROUP, DOES_NOT_EXISTS));
+            if (!ret) cliendDeadErrorExit();
+            return;
+        }
+    } catch (std::exception &e) {
+        slog(SLOG_INFO, "[%s]Add user to group bad format: %s\n", _login.c_str(), e.what());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TO_GROUP, BAD_COMMAND));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TO_GROUP, SUCCESS));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::removeFromGroup(Datagram &&dtg)
+{
+    if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::ADMIN])) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_FROM_GROUP, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_FROM_GROUP, SUCCESS));
+    if (!ret) cliendDeadErrorExit();
 }
 
 void Session::cliendDeadErrorExit()
