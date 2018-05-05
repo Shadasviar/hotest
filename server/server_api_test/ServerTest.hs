@@ -26,4 +26,5 @@ main = do
            else die "Connection to server failed"
         mapM_ (runTest sock) testCasesAdmin
         closeSock sock
+    putStrLn "Post-control OPEN_SESSION test ..."
     mapM_ testSession sesTestCases
