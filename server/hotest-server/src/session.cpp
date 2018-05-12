@@ -62,11 +62,38 @@ void Session::getTest(Datagram && dtg)
 {
     Datagram response;
     response.cmd = GET_TEST;
-    std::string resStr = "{'text':'TEST', 'variants':['OPT1','OPT2']}";
-    response.data = std::vector<uint8_t>(resStr.begin(), resStr.end());
+    try {
+        json res;
+        auto text = Database::getInstance().getTestText(dtg.data[0]);
+        auto answers = Database::getInstance().getAnswers(dtg.data[0]);
+        if (!text || !answers) {
+            slog(SLOG_INFO, "[%s]Get test: no such test: %d\n", _login.c_str(), dtg.data[0]);
+            bool ret = sendDatagram(_clientFd, ErrorDatagram(GET_TEST, DOES_NOT_EXISTS));
+            if (!ret) cliendDeadErrorExit();
+            return;
+        }
+        res["text"] = *text;
+        std::vector<json> pairs;
+        for (auto& item : *answers) {
+            json j;
+            j[std::to_string(item.first)] = item.second;
+            pairs.push_back(j);
+        }
+        res["variants"] = pairs;
 
-    bool ret = sendDatagram(_clientFd, std::move(response));
-    if (!ret) cliendDeadErrorExit();
+        std::string resJson = res.dump();
+        response.data.resize(resJson.size());
+        memcpy(response.data.data(), (char*)resJson.data(), resJson.size());
+        bool ret = sendDatagram(_clientFd, std::move(response));
+        if (!ret) cliendDeadErrorExit();
+        return;
+
+    } catch (std::exception &ex) {
+        slog(SLOG_INFO, "[%s]Get test bad format: %s\n", _login.c_str(), ex.what());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(GET_TEST, BAD_COMMAND));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
 }
 
 void Session::sendTestAnswers(Datagram && dtg)

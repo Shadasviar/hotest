@@ -37,11 +37,11 @@ testCasesTestUser :: [(String, Datagram, Datagram)]
 testCasesTestUser = [
         ("GET_TEST_LIST_SIZE",
         datagram GET_TEST_LIST_SIZE $ empty,
-        datagram GET_TEST_LIST_SIZE $ singleton 0
+        datagram GET_TEST_LIST_SIZE $ singleton 1
         ),
         ("GET_TEST",
         datagram GET_TEST $ singleton 1,
-        datagram GET_TEST $ BSC.pack "{'text':'TEST', 'variants':['OPT1','OPT2']}"
+        datagram GET_TEST $ BSC.pack "{\"text\":\"Test test\",\"variants\":[{\"0\":\"test 0\"},{\"1\":\"test 1\"},{\"2\":\"test 2\"}]}"
         ),
         ("SEND_TEST_ANSWERS",
         datagram SEND_TEST_ANSWERS $ BSC.pack "{'answers':['1':'1', '2':'0']}",

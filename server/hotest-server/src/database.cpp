@@ -239,3 +239,52 @@ int Database::getTestsNumber()
     return res;
 }
 
+Maybe<std::map<int, std::string> > Database::getAnswers(int testId)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    using namespace FunctionalExtensions;
+
+    std::map<int, std::string> responce;
+
+    auto callback = [](void* data , int , char **argv, char **) -> int {
+        auto* responce = (std::map<int, std::string>*)data;
+        (*responce)[atoi(argv[0])] = argv[1];
+        return 0;
+    };
+
+    bool ret = execQuery("SELECT answerId, answer FROM Answers "
+                         "JOIN Tests ON Tests.testId = Answers.testId "
+                         "WHERE Answers.testId = '"+std::to_string(testId)+"';",
+                         "Get answers failed",
+                         callback, (void*)&responce);
+
+    if (!ret) return nothing<std::map<int, std::string>>();
+    return just(responce);
+}
+
+Maybe<std::string> Database::getTestText(int testId)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    using namespace FunctionalExtensions;
+
+    std::string responce;
+
+    auto callback = [](void* data , int , char **argv, char **) -> int {
+        auto* responce = (std::string*)data;
+        (*responce) = std::string(argv[0]);
+        return 0;
+    };
+
+    bool ret = execQuery("SELECT questionText FROM Tests WHERE testId='"
+                         +std::to_string(testId)+"';",
+                         "get test text failed",
+                         callback, (void*)&responce);
+
+    if (!ret) return nothing<std::string>();
+    return just(responce);
+}
+
