@@ -1,4 +1,4 @@
 language: C++
 os: linux
 sudo: enabled
-script: cd server/hotest-server && cmake. && make
+script: cd server/hotest-server && cmake . && make
