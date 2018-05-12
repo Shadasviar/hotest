@@ -217,3 +217,25 @@ bool Database::removeFromGroup(std::string login, std::string group)
                      "Delete record failed");
 }
 
+int Database::getTestsNumber()
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    auto callback = [](void* data , int , char **argv, char **) -> int {
+        auto* n = (int*)data;
+        *n = atoi(argv[0]);
+        return 0;
+    };
+
+    int res = 0;
+
+    bool ret = execQuery("SELECT COUNT(testId) FROM Tests;",
+                     "Select tests failed",
+                     callback,
+                     (void*)&res);
+
+    if (!ret) return -1;
+    return res;
+}
+

@@ -121,6 +121,12 @@ public:
      */
     bool removeFromGroup(std::string login, std::string group);
 
+    /**
+     * @brief getTestsNumber - returns number of tests in database
+     * @return number of tests in the Tests table. If error, returns -1.
+     */
+    int getTestsNumber();
+
 private:
     Database(std::string l = "./users.db");
     std::string _dbLocation = "./users.db";

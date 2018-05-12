@@ -46,7 +46,15 @@ void Session::closeSession(Datagram &&)
 
 void Session::getTestListSize(Datagram &&)
 {
-    bool ret = sendDatagram(_clientFd, Datagram(GET_TEST_LIST_SIZE, {0}));
+    int n = Database::getInstance().getTestsNumber();
+
+    if (n < 0) {
+        slog(SLOG_ERROR, "[%s]Get test list failed\n", _login.c_str());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(GET_TEST_LIST_SIZE, GENERIC_ERROR));
+        if (!ret) cliendDeadErrorExit();
+    }
+
+    bool ret = sendDatagram(_clientFd, Datagram(GET_TEST_LIST_SIZE, {(uint8_t)n}));
     if (!ret) cliendDeadErrorExit();
 }
 
