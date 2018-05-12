@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Shadasviar/hotest.svg?branch=master)](https://travis-ci.org/Shadasviar/hotest)
+
 # hotest
 Client-server application for testing people
 
