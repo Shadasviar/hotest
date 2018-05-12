@@ -211,10 +211,9 @@ bool Database::removeFromGroup(std::string login, std::string group)
     static std::mutex mtx;
     std::lock_guard<std::mutex> lck(mtx);
 
-    return false;
-    /*return execQuery("INSERT INTO GroupsMembers (id, groupeId) "
-                     "SELECT Users.id,Groups.groupeId FROM Users, Groups "
-                     "WHERE Users.Login = '"+login+"' AND Groups.Name = '"+group+"';",
-                     "Add record failed");*/
+    return execQuery("DELETE FROM GroupsMembers "
+                     "WHERE id=(SELECT id FROM Users WHERE Users.Login = '"+login+"') "
+                     "AND groupeId = (SELECT groupeId FROM Groups WHERE Groups.name = '"+group+"'); ",
+                     "Delete record failed");
 }
 

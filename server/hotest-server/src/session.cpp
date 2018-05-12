@@ -318,6 +318,11 @@ void Session::addToGroup(Datagram &&dtg)
             if (!ret) cliendDeadErrorExit();
             return;
         }
+        slog(SLOG_INFO, "[%s]Add user '%s' to group '%s'\n",
+             _login.c_str(),
+             request["login"].get<std::string>().c_str(),
+             request["group"].get<std::string>().c_str());
+
     } catch (std::exception &e) {
         slog(SLOG_INFO, "[%s]Add user to group bad format: %s\n", _login.c_str(), e.what());
         bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TO_GROUP, BAD_COMMAND));
@@ -333,6 +338,29 @@ void Session::removeFromGroup(Datagram &&dtg)
 {
     if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::ADMIN])) {
         bool ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_FROM_GROUP, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    std::string data(dtg.data.size(), 0);
+    memcpy((char*)data.data(), dtg.data.data(), dtg.data.size());
+
+    try {
+        json request = json::parse(data);
+        bool ret = Database::getInstance().removeFromGroup(request["login"], request["group"]);
+        if (!ret) {
+            ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_FROM_GROUP, DOES_NOT_EXISTS));
+            if (!ret) cliendDeadErrorExit();
+            return;
+        }
+        slog(SLOG_INFO, "[%s]Delete user '%s' from group '%s'\n",
+             _login.c_str(),
+             request["login"].get<std::string>().c_str(),
+             request["group"].get<std::string>().c_str());
+
+    } catch (std::exception &e) {
+        slog(SLOG_INFO, "[%s]Remove user from group bad format: %s\n", _login.c_str(), e.what());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_FROM_GROUP, BAD_COMMAND));
         if (!ret) cliendDeadErrorExit();
         return;
     }
