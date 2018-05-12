@@ -49,16 +49,14 @@ struct Datagram {
     /**
      * @brief Datagram - constructor of datagram with parameters to fast writing
      * @param c Command
-     * @param s Size of data
      * @param d Data as vector<uint8_t> abd size s
      */
-    Datagram(Command c, uint8_t s, std::vector<uint8_t> d):
-        cmd(c), dataSize(s), data(d){}
+    Datagram(Command c, std::vector<uint8_t> d):
+        cmd(c), data(d){}
 
     Datagram() = default;
 
     Command cmd = INVALID_COMMAND;
-    uint8_t dataSize = 0;
     std::vector<uint8_t> data;
 };
 
@@ -71,8 +69,7 @@ struct ErrorDatagram : Datagram
      */
     ErrorDatagram(Command c, ErrorCode e) {
         cmd = ERROR_DATAGRAM;
-        dataSize = 2;
-        data.resize(dataSize);
+        data.resize(2);
         data[0] = e;
         data[1] = c;
     }

@@ -46,7 +46,7 @@ void Session::closeSession(Datagram &&)
 
 void Session::getTestListSize(Datagram &&)
 {
-    bool ret = sendDatagram(_clientFd, Datagram(GET_TEST_LIST_SIZE, 1, {0}));
+    bool ret = sendDatagram(_clientFd, Datagram(GET_TEST_LIST_SIZE, {0}));
     if (!ret) cliendDeadErrorExit();
 }
 
@@ -56,7 +56,6 @@ void Session::getTest(Datagram && dtg)
     response.cmd = GET_TEST;
     std::string resStr = "{'text':'TEST', 'variants':['OPT1','OPT2']}";
     response.data = std::vector<uint8_t>(resStr.begin(), resStr.end());
-    response.dataSize = response.data.size();
 
     bool ret = sendDatagram(_clientFd, std::move(response));
     if (!ret) cliendDeadErrorExit();
@@ -78,7 +77,6 @@ void Session::getResult(Datagram &&)
     };
     std::string resStr = res.dump();
     response.data = std::vector<uint8_t>(resStr.begin(), resStr.end());
-    response.dataSize = response.data.size();
 
     bool ret = sendDatagram(_clientFd, std::move(response));
     if (!ret) cliendDeadErrorExit();
@@ -265,7 +263,6 @@ void Session::getUserInfo(Datagram &&dtg)
     std::string msg = (*res).dump();
     responce.data.resize(msg.size());
     memcpy(responce.data.data(), msg.data(), msg.size());
-    responce.dataSize = responce.data.size();
     sendDatagram(_clientFd, std::move(responce));
 }
 
