@@ -11,15 +11,16 @@ Datagram HotestProtocol::recvDatagram(int fd) {
         dgram.cmd = INVALID_COMMAND;
         return dgram;
     }
-    if (read(fd, &dgram.dataSize, 1) < 1) {
+    uint8_t dataSize = 0;
+    if (read(fd, &dataSize, 1) < 1) {
         slog(SLOG_ERROR, "Read data size from client failed\n");
         dgram.cmd = INVALID_COMMAND;
         return dgram;
     }
 
-    dgram.data.resize(dgram.dataSize);
+    dgram.data.resize(dataSize);
     size_t wrote = 0;
-    while ((wrote += read(fd, dgram.data.data()+wrote, dgram.dataSize-wrote)) < dgram.dataSize);
+    while ((wrote += read(fd, dgram.data.data()+wrote, dataSize-wrote)) < dataSize);
 
     return dgram;
 }
@@ -30,13 +31,14 @@ bool HotestProtocol::sendDatagram(int fd, Datagram&& d) {
         return false;
     }
 
-    if (write(fd, &d.dataSize, CMD_BYTE_LEN) < CMD_BYTE_LEN) {
+    uint8_t dataSize = d.data.size();
+    if (write(fd, &dataSize, CMD_BYTE_LEN) < CMD_BYTE_LEN) {
         slog(SLOG_ERROR, "Write data size to client failed\n");
         return false;
     }
 
     size_t wrote = 0;
-    while ((wrote += write(fd, d.data.data()+wrote, d.dataSize-wrote)) < d.dataSize);
+    while ((wrote += write(fd, d.data.data()+wrote, d.data.size()-wrote)) < d.data.size());
 
     return true;
 }

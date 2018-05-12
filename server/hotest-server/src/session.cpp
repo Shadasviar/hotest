@@ -46,7 +46,15 @@ void Session::closeSession(Datagram &&)
 
 void Session::getTestListSize(Datagram &&)
 {
-    bool ret = sendDatagram(_clientFd, Datagram(GET_TEST_LIST_SIZE, 1, {0}));
+    int n = Database::getInstance().getTestsNumber();
+
+    if (n < 0) {
+        slog(SLOG_ERROR, "[%s]Get test list failed\n", _login.c_str());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(GET_TEST_LIST_SIZE, GENERIC_ERROR));
+        if (!ret) cliendDeadErrorExit();
+    }
+
+    bool ret = sendDatagram(_clientFd, Datagram(GET_TEST_LIST_SIZE, {(uint8_t)n}));
     if (!ret) cliendDeadErrorExit();
 }
 
@@ -54,12 +62,38 @@ void Session::getTest(Datagram && dtg)
 {
     Datagram response;
     response.cmd = GET_TEST;
-    std::string resStr = "{'text':'TEST', 'variants':['OPT1','OPT2']}";
-    response.data = std::vector<uint8_t>(resStr.begin(), resStr.end());
-    response.dataSize = response.data.size();
+    try {
+        json res;
+        auto text = Database::getInstance().getTestText(dtg.data[0]);
+        auto answers = Database::getInstance().getAnswers(dtg.data[0]);
+        if (!text || !answers) {
+            slog(SLOG_INFO, "[%s]Get test: no such test: %d\n", _login.c_str(), dtg.data[0]);
+            bool ret = sendDatagram(_clientFd, ErrorDatagram(GET_TEST, DOES_NOT_EXISTS));
+            if (!ret) cliendDeadErrorExit();
+            return;
+        }
+        res["text"] = *text;
+        std::vector<json> pairs;
+        for (auto& item : *answers) {
+            json j;
+            j[std::to_string(item.first)] = item.second;
+            pairs.push_back(j);
+        }
+        res["variants"] = pairs;
 
-    bool ret = sendDatagram(_clientFd, std::move(response));
-    if (!ret) cliendDeadErrorExit();
+        std::string resJson = res.dump();
+        response.data.resize(resJson.size());
+        memcpy(response.data.data(), (char*)resJson.data(), resJson.size());
+        bool ret = sendDatagram(_clientFd, std::move(response));
+        if (!ret) cliendDeadErrorExit();
+        return;
+
+    } catch (std::exception &ex) {
+        slog(SLOG_INFO, "[%s]Get test bad format: %s\n", _login.c_str(), ex.what());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(GET_TEST, BAD_COMMAND));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
 }
 
 void Session::sendTestAnswers(Datagram && dtg)
@@ -78,7 +112,6 @@ void Session::getResult(Datagram &&)
     };
     std::string resStr = res.dump();
     response.data = std::vector<uint8_t>(resStr.begin(), resStr.end());
-    response.dataSize = response.data.size();
 
     bool ret = sendDatagram(_clientFd, std::move(response));
     if (!ret) cliendDeadErrorExit();
@@ -265,7 +298,6 @@ void Session::getUserInfo(Datagram &&dtg)
     std::string msg = (*res).dump();
     responce.data.resize(msg.size());
     memcpy(responce.data.data(), msg.data(), msg.size());
-    responce.dataSize = responce.data.size();
     sendDatagram(_clientFd, std::move(responce));
 }
 
@@ -318,6 +350,11 @@ void Session::addToGroup(Datagram &&dtg)
             if (!ret) cliendDeadErrorExit();
             return;
         }
+        slog(SLOG_INFO, "[%s]Add user '%s' to group '%s'\n",
+             _login.c_str(),
+             request["login"].get<std::string>().c_str(),
+             request["group"].get<std::string>().c_str());
+
     } catch (std::exception &e) {
         slog(SLOG_INFO, "[%s]Add user to group bad format: %s\n", _login.c_str(), e.what());
         bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TO_GROUP, BAD_COMMAND));
@@ -333,6 +370,29 @@ void Session::removeFromGroup(Datagram &&dtg)
 {
     if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::ADMIN])) {
         bool ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_FROM_GROUP, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    std::string data(dtg.data.size(), 0);
+    memcpy((char*)data.data(), dtg.data.data(), dtg.data.size());
+
+    try {
+        json request = json::parse(data);
+        bool ret = Database::getInstance().removeFromGroup(request["login"], request["group"]);
+        if (!ret) {
+            ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_FROM_GROUP, DOES_NOT_EXISTS));
+            if (!ret) cliendDeadErrorExit();
+            return;
+        }
+        slog(SLOG_INFO, "[%s]Delete user '%s' from group '%s'\n",
+             _login.c_str(),
+             request["login"].get<std::string>().c_str(),
+             request["group"].get<std::string>().c_str());
+
+    } catch (std::exception &e) {
+        slog(SLOG_INFO, "[%s]Remove user from group bad format: %s\n", _login.c_str(), e.what());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_FROM_GROUP, BAD_COMMAND));
         if (!ret) cliendDeadErrorExit();
         return;
     }

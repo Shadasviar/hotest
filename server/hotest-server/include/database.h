@@ -7,6 +7,7 @@
 #include <functional_extensions.h>
 #include <map>
 #include <json.hpp>
+#include <map>
 
 using FunctionalExtensions::Maybe;
 using nlohmann::json;
@@ -120,6 +121,28 @@ public:
      * @return true if succeed, otherwise false.
      */
     bool removeFromGroup(std::string login, std::string group);
+
+    /**
+     * @brief getTestsNumber - returns number of tests in database
+     * @return number of tests in the Tests table. If error, returns -1.
+     */
+    int getTestsNumber();
+
+    /**
+     * @brief getAnswers return answers of test question given by its id.
+     * @param testId - id of test to get answers for.
+     * @return If test with given id doesn't exists return nothing. On success
+     * returns map filled as [answer_id][answer_text]
+     */
+    Maybe<std::map<int, std::string>> getAnswers(int testId);
+
+    /**
+     * @brief getTestText returns text of question given by its id.
+     * @param testId - id of test to get text of question for.
+     * @return If test with given id doesn't exists return nothing,
+     * otherwise returns text of the question.
+     */
+    Maybe<std::string> getTestText(int testId);
 
 private:
     Database(std::string l = "./users.db");
