@@ -260,7 +260,7 @@ Maybe<std::map<int, std::string> > Database::getAnswers(int testId)
                          "Get answers failed",
                          callback, (void*)&responce);
 
-    if (!ret) return nothing<std::map<int, std::string>>();
+    if (!ret || responce.size() == 0) return nothing<std::map<int, std::string>>();
     return just(responce);
 }
 
@@ -284,7 +284,30 @@ Maybe<std::string> Database::getTestText(int testId)
                          "get test text failed",
                          callback, (void*)&responce);
 
-    if (!ret) return nothing<std::string>();
+    if (!ret || responce == "") return nothing<std::string>();
     return just(responce);
+}
+
+bool Database::addAnswers(std::string username, std::map<int, int> answers)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    bool ret(true);
+
+    try {
+        for (size_t i(0); i < answers.size(); ++i) {
+            ret &= execQuery("REPLACE INTO UserAnswers (userId, testId, answerId) "
+                             "SELECT Users.id, '"+std::to_string(i)+"', "
+                             "'"+std::to_string(answers[i])+"' FROM Users "
+                             "WHERE Users.Login = '"+username+"';",
+                             "Cant update database");
+        }
+    } catch (std::exception& e) {
+        slog(SLOG_ERROR, "Add answers: %s\n", e.what());
+        return false;
+    }
+
+    return ret;
 }
 

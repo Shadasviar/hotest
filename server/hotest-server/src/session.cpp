@@ -98,6 +98,38 @@ void Session::getTest(Datagram && dtg)
 
 void Session::sendTestAnswers(Datagram && dtg)
 {
+    Datagram response;
+    response.cmd = SEND_TEST_ANSWERS;
+
+    std::string input_str((char*)dtg.data.data());
+
+    try {
+        json input = json::parse(input_str);
+
+        std::map<int, int> answers;
+        auto janswers = input["answers"];
+
+        for(auto &j : janswers) {
+            json::iterator it = j.begin();
+            int g = std::stoi(it.key());
+            std::string s = it.value();
+            answers[g] = stoi(s);
+        }
+
+        if (!Database::getInstance().addAnswers(_login, answers)) {
+            slog(SLOG_INFO, "[%s]Send test answers failed\n", _login.c_str());
+            bool ret = sendDatagram(_clientFd, ErrorDatagram(SEND_TEST_ANSWERS, GENERIC_ERROR));
+            if (!ret) cliendDeadErrorExit();
+            return;
+        }
+
+    } catch (std::exception &ex) {
+        slog(SLOG_INFO, "[%s]Send test answers bad format: %s\n", _login.c_str(), ex.what());
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(SEND_TEST_ANSWERS, BAD_COMMAND));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
     bool ret = sendDatagram(_clientFd, ErrorDatagram(SEND_TEST_ANSWERS, SUCCESS));
     if (!ret) cliendDeadErrorExit();
 }
