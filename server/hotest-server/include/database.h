@@ -144,6 +144,15 @@ public:
      */
     Maybe<std::string> getTestText(int testId);
 
+    /**
+     * @brief addAnswers - add choosen by answers to the database.
+     * @param username - login of user who answer the questions
+     * @param answers - vector of int where indexes of vector are question id
+     * and value is index of choosen answer.
+     * @return true if success, otherwise false.
+     */
+    bool addAnswers(std::string username, std::map<int, int> answers);
+
 private:
     Database(std::string l = "./users.db");
     std::string _dbLocation = "./users.db";

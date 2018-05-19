@@ -43,8 +43,12 @@ testCasesTestUser = [
         datagram GET_TEST $ singleton 1,
         datagram GET_TEST $ BSC.pack "{\"text\":\"Test test\",\"variants\":[{\"0\":\"test 0\"},{\"1\":\"test 1\"},{\"2\":\"test 2\"}]}"
         ),
+        ("GET_TEST unexisting",
+        datagram GET_TEST $ singleton 100,
+        datagram ERROR_DATAGRAM $ pack [fromErrCode DOES_NOT_EXISTS, fromCmd GET_TEST]
+        ),
         ("SEND_TEST_ANSWERS",
-        datagram SEND_TEST_ANSWERS $ BSC.pack "{'answers':['1':'1', '2':'0']}",
+        datagram SEND_TEST_ANSWERS $ BSC.pack "{\"answers\":[{\"1\":\"1\"}, {\"2\":\"0\"}]}",
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd SEND_TEST_ANSWERS]
         ),
         ("CHANGE_CREDENTIALS",
