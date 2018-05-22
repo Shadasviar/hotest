@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -27,11 +28,13 @@ namespace ClientApp
     {
         public Commands command;
         public List<byte> data = new List<byte>();
+        public string jdata;
+        public TestJSON testJSON;
+        
 
-        public Datagram(Commands command, List<byte> data)
+        public Datagram(Commands command)
         {
             this.command = command;
-            this.data = data;
         }
 
         public Datagram(Commands command, byte[] data)
@@ -60,6 +63,16 @@ namespace ClientApp
                 this.data.AddRange(bufferReceive);
 
             } while (count < smallBuffer[0]);
+
+        }
+
+        public void ReceiveDataJSON(Socket socket, int size)        //dorabotat
+        {
+
+            byte[] smallBufer = new byte[1];
+            
+            
+            testJSON = JsonConvert.DeserializeObject<TestJSON>(jdata);
 
         }
 
@@ -97,6 +110,17 @@ namespace ClientApp
             {
                 frame.Add(data[i]);
             }
+            socket.Send(frame.ToArray());
+        }
+
+        public void SendSize(Socket socket, byte[] data)
+        {
+            List<byte> frame = new List<byte>();
+            int size = data.Length;
+
+            frame.Add((byte)command);
+            frame.Add((byte)size);
+
             socket.Send(frame.ToArray());
         }
 

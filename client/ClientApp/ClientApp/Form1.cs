@@ -10,12 +10,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.VisualBasic;
+using Newtonsoft.Json;
+
 
 namespace ClientApp
 {
     public partial class MainForm : Form
     {
         public static Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        public int sizeOfListTest = 0;
+
         public MainForm()
         {
             InitializeComponent();
@@ -83,6 +87,39 @@ namespace ClientApp
 
                 closeToolStripMenuItem.PerformClick();
             }
+
+        }
+
+        private void getTestSizeToolStripMenuItem_Click(object sender, EventArgs e)         //sprawdzic
+        {
+            byte[] sendData = new byte[0];
+            byte[] data = new byte[10];
+            
+            Datagram getSize = new Datagram(Commands.GET_TEST_LIST_SIZE, sendData);
+            getSize.SendSize(socket, sendData);
+            getSize.ReceiveData(socket);
+
+            sizeOfListTest = data[0];
+
+            if(getSize.data[0] > 0)
+            {
+                MessageBox.Show("Received {0} bytes", data[1].ToString());
+            }
+        }
+
+        private void getTestToolStripMenuItem_Click(object sender, EventArgs e)     //zrobic mozliwosc wpowadzenia numera testu w oknie
+        {
+            getTestSizeToolStripMenuItem.PerformClick();        // dla otrzyamania size of list tests
+            //sizeOfListTest        paramettr dla zliczania testow
+                         
+            byte[] tests = new byte[50];
+            tests[0] = 1;
+            string strResultJson = String.Empty;
+
+            Datagram getTest = new Datagram(Commands.GET_TEST, tests);
+
+            getTest.Send(socket);
+            getTest.ReceiveDataJSON(socket, sizeOfListTest);
 
         }
     }
