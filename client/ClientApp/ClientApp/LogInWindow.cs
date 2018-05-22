@@ -14,7 +14,6 @@ namespace ClientApp
 {
     public partial class LogInWindow : Form
     {
-        string adress = "10.100.1.149";
         int port = 6666;
         public static string login;
         public static string password;

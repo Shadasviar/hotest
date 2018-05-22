@@ -10,6 +10,7 @@ namespace ClientApp
     public enum Commands
     {
         INVALID_COMMAND = 0,    // done
+        INVALID_COMMAND = 0,   // done
         GET_TEST_LIST_SIZE = 1,
         GET_TEST = 2,
         SEND_TEST_ANSWERS = 3,
