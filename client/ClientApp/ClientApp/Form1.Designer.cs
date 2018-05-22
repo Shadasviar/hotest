@@ -36,6 +36,8 @@
             this.addGroupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.changeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.getTestSizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.getTestToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -54,7 +56,9 @@
             // fileToolStripMenuItem
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.closeToolStripMenuItem});
+            this.closeToolStripMenuItem,
+            this.getTestSizeToolStripMenuItem,
+            this.getTestToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
@@ -62,7 +66,7 @@
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(103, 22);
+            this.closeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.closeToolStripMenuItem.Text = "Close";
             this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
             // 
@@ -104,6 +108,20 @@
             this.changeToolStripMenuItem.Text = "Change login/password";
             this.changeToolStripMenuItem.Click += new System.EventHandler(this.changeToolStripMenuItem_Click);
             // 
+            // getTestSizeToolStripMenuItem
+            // 
+            this.getTestSizeToolStripMenuItem.Name = "getTestSizeToolStripMenuItem";
+            this.getTestSizeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.getTestSizeToolStripMenuItem.Text = "Get test size";
+            this.getTestSizeToolStripMenuItem.Click += new System.EventHandler(this.getTestSizeToolStripMenuItem_Click);
+            // 
+            // getTestToolStripMenuItem
+            // 
+            this.getTestToolStripMenuItem.Name = "getTestToolStripMenuItem";
+            this.getTestToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.getTestToolStripMenuItem.Text = "Get test";
+            this.getTestToolStripMenuItem.Click += new System.EventHandler(this.getTestToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -131,6 +149,8 @@
         private System.Windows.Forms.ToolStripMenuItem addGroupToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem changeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem getTestSizeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem getTestToolStripMenuItem;
     }
 }
 

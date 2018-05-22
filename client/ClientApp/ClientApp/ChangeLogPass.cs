@@ -29,6 +29,7 @@ namespace ClientApp
         }
 
         private void buttonApply_Click(object sender, EventArgs e)
+        private void buttonApply_Click(object sender, EventArgs e)          // zrobić możliwośc wprowadznia loginu i hasla tylko do 16 symbolow 
         {
             string newLogin, newPassword;
             byte[] data = new byte[50];
