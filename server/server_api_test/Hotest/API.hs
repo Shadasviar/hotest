@@ -27,6 +27,8 @@ data Command = INVALID_COMMAND
     | SET_USER_INFO
     | ADD_TO_GROUP
     | REMOVE_FROM_GROUP
+    | ADD_TEST
+    | REMOVE_TEST
     deriving (Enum, Show, Eq)
 
 data ErrorCode = SUCCESS 

@@ -433,6 +433,48 @@ void Session::removeFromGroup(Datagram &&dtg)
     if (!ret) cliendDeadErrorExit();
 }
 
+void Session::addTest(Datagram &&dtg)
+{
+    if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::EXAMINATOR])) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TEST, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    std::string data(dtg.data.size(), 0);
+    memcpy((char*)data.data(), dtg.data.data(), dtg.data.size());
+
+    try {
+        json j = json::parse(data);
+        std::string text = j["text"];
+        std::string ranswer = j["right_answer"];
+        std::vector<std::string> answers;
+        for(auto &ans : j["answers"]) {
+            std::string s = ans;
+            answers.push_back(s);
+        }
+        bool ret = Database::getInstance().addTest(text, answers, ranswer);
+        if (!ret) {
+            bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TEST, GENERIC_ERROR));
+            if (!ret) cliendDeadErrorExit();
+            return;
+        }
+    } catch (std::exception &ex) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TEST, BAD_COMMAND));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(ADD_TEST, SUCCESS));
+    if (!ret) cliendDeadErrorExit();
+}
+
+void Session::removeTest(Datagram &&dtg)
+{
+    bool ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_TEST, ACCESS_DENIED));
+    if (!ret) cliendDeadErrorExit();
+}
+
 void Session::cliendDeadErrorExit()
 {
     _connected = false;

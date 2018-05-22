@@ -311,3 +311,52 @@ bool Database::addAnswers(std::string username, std::map<int, int> answers)
     return ret;
 }
 
+bool Database::addTest(std::string text, std::vector<std::string> answers, std::string ranswer)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    bool ret(true);
+    int id(-1);
+
+    /* Insert test and get id by SELECT last_insert_rowid();*/
+    ret = execQuery("INSERT INTO Tests (questionText, rightAnswerIndex) "
+                    "VALUES ('" + text +"', -1);",
+                    "Cant add text of question");
+
+    if (!ret) return ret;
+
+    ret = execQuery("SELECT last_insert_rowid();", "Cant get id of test",
+                     [](void* data , int , char **argv, char **){
+                            int *id = (int*)data;
+                            *id = std::stoi(argv[0]);
+                            return 0;
+                        },
+                    (void*)&id);
+    if (!ret) return ret;
+
+    /* Insert all answers*/
+    int ansId(0);
+    for (std::string&s : answers) {
+        ret &= execQuery("INSERT INTO Answers (testId, answerId, answer) "
+                         "VALUES ('"+std::to_string(id)+"', "
+                         "'"+std::to_string(ansId++)+"', "
+                         "'"+s+"');",
+                         "Cant update database");
+    }
+    if (!ret) return ret;
+
+    /* Insert right answer and get it id*/
+    ret = execQuery("INSERT INTO Answers (testId, answerId, answer) "
+                    "VALUES ('"+std::to_string(id)+"','"+std::to_string(ansId)+"' "
+                    ", '"+ranswer+"');",
+                     "Cant insert right answer");
+    if (!ret) return ret;
+
+    /* Update test with right answer id*/
+    ret = execQuery("UPDATE Tests SET rightAnswerIndex = '"+std::to_string(ansId)+"' "
+                     "WHERE testId = '"+std::to_string(id)+"';",
+                     "Cant update right answer");
+    return ret;
+}
+

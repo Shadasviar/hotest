@@ -27,6 +27,8 @@ enum Command : uint8_t {
     SET_USER_INFO,
     ADD_TO_GROUP,
     REMOVE_FROM_GROUP,
+    ADD_TEST,
+    REMOVE_TEST
 };
 
 #define LOGIN_BYTE_SIZE 20
