@@ -153,6 +153,15 @@ public:
      */
     bool addAnswers(std::string username, std::map<int, int> answers);
 
+    /**
+     * @brief addTest - add new question to the list of tests
+     * @param text - text of the question
+     * @param answers - answers excepting right answer for the question
+     * @param ranswer - right answer for the question
+     * @return true if successfully added, otherwise false.
+     */
+    bool addTest(std::string text, std::vector<std::string> answers, std::string ranswer);
+
 private:
     Database(std::string l = "./users.db");
     std::string _dbLocation = "./users.db";

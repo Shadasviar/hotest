@@ -47,6 +47,10 @@ testCasesTestUser = [
         datagram GET_TEST $ singleton 100,
         datagram ERROR_DATAGRAM $ pack [fromErrCode DOES_NOT_EXISTS, fromCmd GET_TEST]
         ),
+        ("ADD_TEST",
+        datagram ADD_TEST $ BSC.pack "{\"text\":\"Test test\",\"answers\":[\"test 0\",\"test 1\",\"test 2\"], \"right_answer\":\"proud\"}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd ADD_TEST]
+        ),
         ("SEND_TEST_ANSWERS",
         datagram SEND_TEST_ANSWERS $ BSC.pack "{\"answers\":[{\"1\":\"1\"}, {\"2\":\"0\"}]}",
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd SEND_TEST_ANSWERS]
@@ -132,6 +136,26 @@ testCasesAdmin = [
         datagram DELETE_GROUP $ BSC.pack "Admins",
         datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd DELETE_GROUP]
         ),
+        ("GET_TEST_LIST_SIZE",
+        datagram GET_TEST_LIST_SIZE $ empty,
+        datagram GET_TEST_LIST_SIZE $ singleton 1
+        ),
+        ("Add test",
+        datagram ADD_TEST $ BSC.pack "{\"text\":\"Test test\",\"answers\":[\"test 0\",\"test 1\",\"test 2\"], \"right_answer\":\"proud\"}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_TEST]
+        ),
+        ("Check tests count after adding test",
+        datagram GET_TEST_LIST_SIZE $ empty,
+        datagram GET_TEST_LIST_SIZE $ singleton 2
+        ),
+        ("Remove test",
+        datagram REMOVE_TEST $ singleton 2,
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd REMOVE_TEST]
+        ),
+        ("Check tests count after removing test",
+        datagram GET_TEST_LIST_SIZE $ empty,
+        datagram GET_TEST_LIST_SIZE $ singleton 1
+        ),    
         ("Add new user",
         datagram ADD_USER $ opSesData ["{\"login\":\"User\",\"password\":\"12345sd\",\"name\":\"Test new\",\"surname\":\"SurnameXXX\"}"],
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_USER]
