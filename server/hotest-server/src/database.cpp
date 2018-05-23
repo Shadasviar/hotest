@@ -19,6 +19,7 @@ Database::Database(std::string l):
         return;
     }
     _db.reset(dbPtr);
+    execQuery("PRAGMA foreign_keys = ON", "Cant enable foreign keys.");
 }
 
 bool Database::execQuery(std::string userQuery,
