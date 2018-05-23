@@ -149,7 +149,7 @@ testCasesAdmin = [
         datagram GET_TEST_LIST_SIZE $ singleton 2
         ),
         ("Remove test",
-        datagram REMOVE_TEST $ singleton 2,
+        datagram REMOVE_TEST $ singleton 1,
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd REMOVE_TEST]
         ),
         ("Check tests count after removing test",

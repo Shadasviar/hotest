@@ -8,6 +8,7 @@
 #include <map>
 #include <json.hpp>
 #include <map>
+#include <set>
 
 using FunctionalExtensions::Maybe;
 using nlohmann::json;
@@ -173,6 +174,7 @@ private:
     Database(std::string l = "./users.db");
     std::string _dbLocation = "./users.db";
     std::unique_ptr<sqlite3, decltype(&sqlite3_close)> _db;
+    std::set<int> _freeIndeces;
 
     bool execQuery(std::string userQuery, std::string userErrmsg,
                    int(*callback)(void *, int, char **, char **) = nullptr,
