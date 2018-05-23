@@ -40,7 +40,7 @@ testCasesTestUser = [
         datagram GET_TEST_LIST_SIZE $ singleton 1
         ),
         ("GET_TEST",
-        datagram GET_TEST $ singleton 1,
+        datagram GET_TEST $ singleton 0,
         datagram GET_TEST $ BSC.pack "{\"text\":\"Test test\",\"variants\":[{\"0\":\"test 0\"},{\"1\":\"test 1\"},{\"2\":\"test 2\"}]}"
         ),
         ("GET_TEST unexisting",
@@ -52,7 +52,7 @@ testCasesTestUser = [
         datagram ERROR_DATAGRAM $ pack [fromErrCode ACCESS_DENIED, fromCmd ADD_TEST]
         ),
         ("SEND_TEST_ANSWERS",
-        datagram SEND_TEST_ANSWERS $ BSC.pack "{\"answers\":[{\"1\":\"1\"}, {\"2\":\"0\"}]}",
+        datagram SEND_TEST_ANSWERS $ BSC.pack "{\"answers\":[{\"0\":\"1\"}]}",
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd SEND_TEST_ANSWERS]
         ),
         ("CHANGE_CREDENTIALS",
@@ -65,7 +65,7 @@ testCasesTestUser = [
         ),
         ("GET_RESULTS",
         datagram GET_RESULTS $ empty,
-        datagram GET_RESULTS $ BSC.pack "{\"all\":100,\"pass\":80}"
+        datagram GET_RESULTS $ BSC.pack "{\"all\":1,\"pass\":0}"
         ),
         ("ADD_GROUP",
         datagram ADD_GROUP $ BSC.pack "Group test",
@@ -144,15 +144,31 @@ testCasesAdmin = [
         datagram ADD_TEST $ BSC.pack "{\"text\":\"Test test\",\"answers\":[\"test 0\",\"test 1\",\"test 2\"], \"right_answer\":\"proud\"}",
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd ADD_TEST]
         ),
+        ("Send 2/2",
+        datagram SEND_TEST_ANSWERS $ BSC.pack "{\"answers\":[{\"0\":\"2\"}, {\"1\":\"3\"}]}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd SEND_TEST_ANSWERS]
+        ),
+        ("Pass 2/2",
+        datagram GET_RESULTS $ empty,
+        datagram GET_RESULTS $ BSC.pack "{\"all\":2,\"pass\":2}"
+        ),
+        ("Send 0/2",
+        datagram SEND_TEST_ANSWERS $ BSC.pack "{\"answers\":[{\"0\":\"0\"}, {\"1\":\"2\"}]}",
+        datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd SEND_TEST_ANSWERS]
+        ),
+        ("Pass 0/2",
+        datagram GET_RESULTS $ empty,
+        datagram GET_RESULTS $ BSC.pack "{\"all\":2,\"pass\":0}"
+        ),
         ("Check tests count after adding test",
         datagram GET_TEST_LIST_SIZE $ empty,
         datagram GET_TEST_LIST_SIZE $ singleton 2
         ),
         ("Remove test",
-        datagram REMOVE_TEST $ singleton 2,
+        datagram REMOVE_TEST $ singleton 1,
         datagram ERROR_DATAGRAM $ pack [fromErrCode SUCCESS, fromCmd REMOVE_TEST]
         ),
-        ("Check tests count after removing test",
+        ("Check tests count after remove",
         datagram GET_TEST_LIST_SIZE $ empty,
         datagram GET_TEST_LIST_SIZE $ singleton 1
         ),    

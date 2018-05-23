@@ -19,6 +19,9 @@ Database::Database(std::string l):
         return;
     }
     _db.reset(dbPtr);
+    execQuery("PRAGMA foreign_keys = ON", "Cant enable foreign keys.");
+
+    for(int i (1); i < 100; ++i) _freeIndeces.insert(i);
 }
 
 bool Database::execQuery(std::string userQuery,
@@ -279,7 +282,7 @@ Maybe<std::string> Database::getTestText(int testId)
         return 0;
     };
 
-    bool ret = execQuery("SELECT questionText FROM Tests WHERE testId='"
+    bool ret = execQuery("SELECT questionText FROM Tests WHERE publicId='"
                          +std::to_string(testId)+"';",
                          "get test text failed",
                          callback, (void*)&responce);
@@ -298,9 +301,11 @@ bool Database::addAnswers(std::string username, std::map<int, int> answers)
     try {
         for (size_t i(0); i < answers.size(); ++i) {
             ret &= execQuery("REPLACE INTO UserAnswers (userId, testId, answerId) "
-                             "SELECT Users.id, '"+std::to_string(i)+"', "
-                             "'"+std::to_string(answers[i])+"' FROM Users "
-                             "WHERE Users.Login = '"+username+"';",
+                             "SELECT Users.id, Tests.testId, "
+                             "'"+std::to_string(answers[i])+"' "
+                             "FROM Users, Tests "
+                             "WHERE Users.Login = '"+username+"' "
+                             "AND Tests.publicId = '"+std::to_string(i)+"';",
                              "Cant update database");
         }
     } catch (std::exception& e) {
@@ -318,15 +323,19 @@ bool Database::addTest(std::string text, std::vector<std::string> answers, std::
 
     bool ret(true);
     int id(-1);
+    if (_freeIndeces.size() <= 0) return false;
+    int pubId = *(_freeIndeces.begin());
+    _freeIndeces.erase(pubId);
 
     /* Insert test and get id by SELECT last_insert_rowid();*/
-    ret = execQuery("INSERT INTO Tests (questionText, rightAnswerIndex) "
-                    "VALUES ('" + text +"', -1);",
+    ret = execQuery("INSERT INTO Tests (questionText, rightAnswerIndex, publicId) "
+                    "VALUES ('" + text +"', -1, '"+std::to_string(pubId)+"');",
                     "Cant add text of question");
 
     if (!ret) return ret;
 
-    ret = execQuery("SELECT last_insert_rowid();", "Cant get id of test",
+    ret = execQuery("SELECT testId FROM Tests WHERE publicId = '"+std::to_string(pubId)+"';"
+                    , "Cant get id of test",
                      [](void* data , int , char **argv, char **){
                             int *id = (int*)data;
                             *id = std::stoi(argv[0]);
@@ -358,5 +367,40 @@ bool Database::addTest(std::string text, std::vector<std::string> answers, std::
                      "WHERE testId = '"+std::to_string(id)+"';",
                      "Cant update right answer");
     return ret;
+}
+
+bool Database::removeTest(int id)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    bool ret =  execQuery("DELETE FROM Tests WHERE publicId = '"+std::to_string(id)+"';",
+                     "Cant remove test.");
+    if (ret) _freeIndeces.insert(id);
+    return ret;
+}
+
+Maybe<std::map<int, int> > Database::getRightRealAnswerPairs(std::string login)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    std::map<int,int> res;
+    using namespace FunctionalExtensions;
+
+    auto callback = [](void* data , int , char **argv, char **) -> int {
+        auto* responce = (std::map<int,int>*)data;
+        (*responce)[std::stoi(argv[0])] = std::stoi(argv[1]);
+        return 0;
+    };
+
+    bool ret = execQuery("SELECT Tests.rightAnswerIndex, UserAnswers.answerId "
+                      "FROM Tests JOIN UserAnswers ON Tests.testId = UserAnswers.testId "
+                      "JOIN Users ON Users.id = UserAnswers.userId "
+                      "WHERE Users.Login = '"+login+"';",
+                      "Cant remove test.", callback, (void*)&res);
+
+    if (!ret) return nothing<std::map<int,int>>();
+    return just(res);
 }
 
