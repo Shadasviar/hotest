@@ -170,6 +170,14 @@ public:
      */
     bool removeTest(int id);
 
+    /**
+     * @brief getRightRealAnswerPairs Get right answers paired with answers got from user
+     * @param login - login of user to get aswers of.
+     * @return On success just map of ints where key is right answer and value is user's answer.
+     *         Nothing if error occured.
+     */
+    Maybe<std::map<int, int>> getRightRealAnswerPairs(std::string login);
+
 private:
     Database(std::string l = "./users.db");
     std::string _dbLocation = "./users.db";

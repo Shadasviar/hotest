@@ -380,3 +380,27 @@ bool Database::removeTest(int id)
     return ret;
 }
 
+Maybe<std::map<int, int> > Database::getRightRealAnswerPairs(std::string login)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    std::map<int,int> res;
+    using namespace FunctionalExtensions;
+
+    auto callback = [](void* data , int , char **argv, char **) -> int {
+        auto* responce = (std::map<int,int>*)data;
+        (*responce)[std::stoi(argv[0])] = std::stoi(argv[1]);
+        return 0;
+    };
+
+    bool ret = execQuery("SELECT Tests.rightAnswerIndex, UserAnswers.answerId "
+                      "FROM Tests JOIN UserAnswers ON Tests.testId = UserAnswers.testId "
+                      "JOIN Users ON Users.id = UserAnswers.userId "
+                      "WHERE Users.Login = '"+login+"';",
+                      "Cant remove test.", callback, (void*)&res);
+
+    if (!ret) return nothing<std::map<int,int>>();
+    return just(res);
+}
+

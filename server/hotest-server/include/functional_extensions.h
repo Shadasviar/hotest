@@ -74,15 +74,15 @@ Maybe<T> nothing() {
     return Maybe<T>();
 }
 
-template <typename T, typename V = typename T::value_type>
+template <typename T, typename R, typename V = typename T::value_type>
 /**
  * @brief map - apply function to each element of container
  * @param x - container which function will be applied for
  * @f f - function which will be applied for every element of container
  * @return new container of type T wich contains copied and transformed input data.
  */
-T map(const T& x, V(*f)(V)) {
-    T res(x.size());
+R map(const T& x, V(*f)(V)) {
+    R res(x.size());
     auto res_iter = begin(res);
     for (auto i(begin(x)); i < end(x); ++i) {
         *res_iter++ = f(*i);
