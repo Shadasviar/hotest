@@ -360,3 +360,12 @@ bool Database::addTest(std::string text, std::vector<std::string> answers, std::
     return ret;
 }
 
+bool Database::removeTest(int id)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lck(mtx);
+
+    return execQuery("DELETE FROM Tests WHERE testId = '"+std::to_string(id)+"';",
+                     "Cant remove test.");
+}
+

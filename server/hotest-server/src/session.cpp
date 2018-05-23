@@ -471,7 +471,18 @@ void Session::addTest(Datagram &&dtg)
 
 void Session::removeTest(Datagram &&dtg)
 {
-    bool ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_TEST, ACCESS_DENIED));
+    if (!Database::getInstance().hasAccess(_login, Database::defaultGroups[Database::EXAMINATOR])) {
+        bool ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_TEST, ACCESS_DENIED));
+        if (!ret) cliendDeadErrorExit();
+        return;
+    }
+
+    bool ret = Database::getInstance().removeTest(dtg.data[0]);
+    if (!ret) {
+        ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_TEST, GENERIC_ERROR));
+        if (!ret) cliendDeadErrorExit();
+    }
+    ret = sendDatagram(_clientFd, ErrorDatagram(REMOVE_TEST, SUCCESS));
     if (!ret) cliendDeadErrorExit();
 }
 

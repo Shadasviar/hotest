@@ -162,6 +162,13 @@ public:
      */
     bool addTest(std::string text, std::vector<std::string> answers, std::string ranswer);
 
+    /**
+     * @brief removeTest remove test with given id from list of tests.
+     * @param id - id of test to be removed.
+     * @return true if removed successfully, otherwise false.
+     */
+    bool removeTest(int id);
+
 private:
     Database(std::string l = "./users.db");
     std::string _dbLocation = "./users.db";
