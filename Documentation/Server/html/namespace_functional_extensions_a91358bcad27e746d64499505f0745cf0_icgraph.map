@@ -1,0 +1,8 @@
+<map id="FunctionalExtensions::just" name="FunctionalExtensions::just">
+<area shape="rect" id="node2" href="$class_database.html#ad677efa4c288777aa01919242d4bbfc4" title="getPassword &#45; get hashed password of user from database by login " alt="" coords="222,5,391,32"/>
+<area shape="rect" id="node3" href="$class_database.html#a4c2ea4a00c6a212440abee5ca9c9b6dc" title="deleteGroup &#45; delete group from database. Predefined groups: Admins and Examinators can not be delete..." alt="" coords="225,56,389,83"/>
+<area shape="rect" id="node4" href="$class_database.html#a022f8940e65760877d2589ac8822695c" title="getUserInfo &#45; get complete information about user by login. " alt="" coords="228,107,385,133"/>
+<area shape="rect" id="node5" href="$class_database.html#a48dd58400d535f20aebb2077c8599b50" title="getAnswers return answers of test question given by its id. " alt="" coords="227,157,387,184"/>
+<area shape="rect" id="node6" href="$class_database.html#af1ada135f0846dfd00e674a8b7f6509f" title="getTestText returns text of question given by its id. " alt="" coords="225,208,389,235"/>
+<area shape="rect" id="node7" href="$class_database.html#a712692ed9fe9303bf87e72116ff719cf" title="getRightRealAnswerPairs Get right answers paired with answers got from user " alt="" coords="201,259,412,301"/>
+</map>
