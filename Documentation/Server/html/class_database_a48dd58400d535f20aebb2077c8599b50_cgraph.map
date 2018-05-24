@@ -1,0 +1,4 @@
+<map id="Database::getAnswers" name="Database::getAnswers">
+<area shape="rect" id="node2" href="$namespace_functional_extensions.html#a3ace16ff376bb1527eb95af284a4261f" title="nothing &#45; constructs Maybe object with no value, i.e. nothing " alt="" coords="213,5,361,47"/>
+<area shape="rect" id="node3" href="$namespace_functional_extensions.html#a91358bcad27e746d64499505f0745cf0" title="just &#45; constructs just Maybe object with value " alt="" coords="213,71,361,112"/>
+</map>
