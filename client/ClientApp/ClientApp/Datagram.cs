@@ -1,16 +1,16 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace ClientApp
 {
     public enum Commands
     {
-        INVALID_COMMAND = 0,   // done
+        INVALID_COMMAND = 0,    // done
         GET_TEST_LIST_SIZE = 1,
         GET_TEST = 2,
         SEND_TEST_ANSWERS = 3,
@@ -20,21 +20,26 @@ namespace ClientApp
         CHANGE_CREDENTIALS = 7,
         ADD_GROUP = 8,          //done
         ADD_USER = 9,
-        ERROR_DATAGRAM = 10
-
+        ERROR_DATAGRAM = 10,
+        DELETE_USER = 11,
+        DELETE_GROUP = 12,
+        GET_USER_INFO = 13,
+        SET_USER_INFO = 14,
+        ADD_TO_GROUP = 15,
+        REMOVE_FROM_GROUP = 16
     }
 
     class Datagram
     {
         public Commands command;
         public List<byte> data = new List<byte>();
-        public string jdata;
+        public char [] jdata;
         public TestJSON testJSON;
-        
 
-        public Datagram(Commands command)
+        public Datagram(Commands command, List<byte> data)
         {
             this.command = command;
+            this.data = data;
         }
 
         public Datagram(Commands command, byte[] data)
@@ -66,16 +71,6 @@ namespace ClientApp
 
         }
 
-        public void ReceiveDataJSON(Socket socket, int size)        //dorabotat
-        {
-
-            byte[] smallBufer = new byte[1];
-            
-            
-            testJSON = JsonConvert.DeserializeObject<TestJSON>(jdata);
-
-        }
-
         public static byte[] PackLogPassData(string login, string pass, byte[] output)
         {
             for (int i = 0; i < login.Length; i++)
@@ -86,6 +81,21 @@ namespace ClientApp
             {
                 output[20 + i] = (byte)pass[i];
             }
+            return output;
+        }
+
+        public static byte[] PackLogPassGroup(string login, string pass, byte [] group, byte[] output)
+        {
+            for (int i = 0; i < login.Length; i++)
+            {
+                output[i] = (byte)login[i];
+            }
+            for (int i = 0; i < pass.Length; i++)
+            {
+                output[20 + i] = (byte)pass[i];
+            }
+
+            output[50] = group[0];
             return output;
         }
 
@@ -123,6 +133,8 @@ namespace ClientApp
 
             socket.Send(frame.ToArray());
         }
+
+
 
 
     }

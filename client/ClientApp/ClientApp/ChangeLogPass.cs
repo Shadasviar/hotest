@@ -29,7 +29,6 @@ namespace ClientApp
         }
 
         private void buttonApply_Click(object sender, EventArgs e)
-        private void buttonApply_Click(object sender, EventArgs e)          // zrobić możliwośc wprowadznia loginu i hasla tylko do 16 symbolow 
         {
             string newLogin, newPassword;
             byte[] data = new byte[50];
@@ -48,7 +47,7 @@ namespace ClientApp
             chLogPassReq.Send(MainForm.socket);
             chLogPassReq.ReceiveData(MainForm.socket);
 
-            if (chLogPassReq.data[1] == 7)
+            if (chLogPassReq.data[0] == 0)
             {
                 MessageBox.Show("Data have been successfully changed");
             }               // to do refresh page with the new login and password 

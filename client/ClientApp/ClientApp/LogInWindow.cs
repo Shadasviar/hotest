@@ -14,7 +14,7 @@ namespace ClientApp
 {
     public partial class LogInWindow : Form
     {
-        string adress = "192.168.0.157";
+        public string adress;
         int port = 6666;
         public static string login;
         public static string password;
@@ -22,6 +22,21 @@ namespace ClientApp
         public LogInWindow()
         {
             InitializeComponent();
+
+           
+        }
+       
+        
+
+        private void buttonLogin_Click(object sender, EventArgs e)
+        {
+
+
+
+            adress = textBoxIP.Text;
+            login = textBoxLogin.Text;
+            password = textBoxPassword.Text;
+            byte[] bytes = new byte[50];
 
             IPEndPoint ipPoint = new IPEndPoint(IPAddress.Parse(adress), port);
 
@@ -33,16 +48,8 @@ namespace ClientApp
             {
                 Console.WriteLine(ex.Message);
             }
-        }
-       
-        
 
-        private void buttonLogin_Click(object sender, EventArgs e)
-        {
 
-            login = textBoxLogin.Text;
-            password = textBoxPassword.Text;
-            byte[] bytes = new byte[50];
 
             Datagram message = new Datagram(Commands.OPEN_SESSION, Datagram.PackLogPassData(login, password, bytes));
 
