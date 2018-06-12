@@ -52,6 +52,8 @@ private:
     void setUserInfo(HotestProtocol::Datagram&&dtg);
     void addToGroup(HotestProtocol::Datagram&&dtg);
     void removeFromGroup(HotestProtocol::Datagram&&dtg);
+    void addTest(HotestProtocol::Datagram&&dtg);
+    void removeTest(HotestProtocol::Datagram&&dtg);
 
     std::map<HotestProtocol::Command, Operation> _operations {
         {HotestProtocol::INVALID_COMMAND,   SHIFT(invalidCommand)},
@@ -70,6 +72,8 @@ private:
         {HotestProtocol::SET_USER_INFO,     SHIFT(setUserInfo)},
         {HotestProtocol::ADD_TO_GROUP,      SHIFT(addToGroup)},
         {HotestProtocol::REMOVE_FROM_GROUP, SHIFT(removeFromGroup)},
+        {HotestProtocol::ADD_TEST,          SHIFT(addTest)},
+        {HotestProtocol::REMOVE_TEST,       SHIFT(removeTest)},
     };
 
     void cliendDeadErrorExit();

@@ -8,6 +8,7 @@
 #include <map>
 #include <json.hpp>
 #include <map>
+#include <set>
 
 using FunctionalExtensions::Maybe;
 using nlohmann::json;
@@ -153,10 +154,35 @@ public:
      */
     bool addAnswers(std::string username, std::map<int, int> answers);
 
+    /**
+     * @brief addTest - add new question to the list of tests
+     * @param text - text of the question
+     * @param answers - answers excepting right answer for the question
+     * @param ranswer - right answer for the question
+     * @return true if successfully added, otherwise false.
+     */
+    bool addTest(std::string text, std::vector<std::string> answers, std::string ranswer);
+
+    /**
+     * @brief removeTest remove test with given id from list of tests.
+     * @param id - id of test to be removed.
+     * @return true if removed successfully, otherwise false.
+     */
+    bool removeTest(int id);
+
+    /**
+     * @brief getRightRealAnswerPairs Get right answers paired with answers got from user
+     * @param login - login of user to get aswers of.
+     * @return On success just map of ints where key is right answer and value is user's answer.
+     *         Nothing if error occured.
+     */
+    Maybe<std::map<int, int>> getRightRealAnswerPairs(std::string login);
+
 private:
     Database(std::string l = "./users.db");
     std::string _dbLocation = "./users.db";
     std::unique_ptr<sqlite3, decltype(&sqlite3_close)> _db;
+    std::set<int> _freeIndeces;
 
     bool execQuery(std::string userQuery, std::string userErrmsg,
                    int(*callback)(void *, int, char **, char **) = nullptr,
