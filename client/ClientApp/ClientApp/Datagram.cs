@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace ClientApp
 {
@@ -19,14 +20,21 @@ namespace ClientApp
         CHANGE_CREDENTIALS = 7,
         ADD_GROUP = 8,          //done
         ADD_USER = 9,
-        ERROR_DATAGRAM = 10
-
+        ERROR_DATAGRAM = 10,
+        DELETE_USER = 11,
+        DELETE_GROUP = 12,
+        GET_USER_INFO = 13,
+        SET_USER_INFO = 14,
+        ADD_TO_GROUP = 15,
+        REMOVE_FROM_GROUP = 16
     }
 
     class Datagram
     {
         public Commands command;
         public List<byte> data = new List<byte>();
+        public char [] jdata;
+        public TestJSON testJSON;
 
         public Datagram(Commands command, List<byte> data)
         {
@@ -76,6 +84,21 @@ namespace ClientApp
             return output;
         }
 
+        public static byte[] PackLogPassGroup(string login, string pass, byte [] group, byte[] output)
+        {
+            for (int i = 0; i < login.Length; i++)
+            {
+                output[i] = (byte)login[i];
+            }
+            for (int i = 0; i < pass.Length; i++)
+            {
+                output[20 + i] = (byte)pass[i];
+            }
+
+            output[50] = group[0];
+            return output;
+        }
+
         public static byte[] StringToByte(string word, byte[] output)
         {
             for (int i = 0; i < word.Length; i++)
@@ -99,6 +122,19 @@ namespace ClientApp
             }
             socket.Send(frame.ToArray());
         }
+
+        public void SendSize(Socket socket, byte[] data)
+        {
+            List<byte> frame = new List<byte>();
+            int size = data.Length;
+
+            frame.Add((byte)command);
+            frame.Add((byte)size);
+
+            socket.Send(frame.ToArray());
+        }
+
+
 
 
     }

@@ -47,7 +47,7 @@ namespace ClientApp
             chLogPassReq.Send(MainForm.socket);
             chLogPassReq.ReceiveData(MainForm.socket);
 
-            if (chLogPassReq.data[1] == 7)
+            if (chLogPassReq.data[0] == 0)
             {
                 MessageBox.Show("Data have been successfully changed");
             }               // to do refresh page with the new login and password 
